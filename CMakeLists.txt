@@ -24,6 +24,7 @@ add_executable(
     tests
     test/test_glm_lorentz.cpp
     test/test_hyperbolic.cpp
+    test/test_liealgebra.cpp
     test/test_rigid_body.cpp
     )
 

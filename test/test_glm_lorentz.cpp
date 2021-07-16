@@ -2,31 +2,13 @@
 
 #include <math.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtx/transform.hpp>
+
 #include "glm_lorentz.h"
-#include "rigid_body.h"
 
-constexpr float epsilon = 1e-6f;
+#include "glm_assertions.h"  // For checking whether vectors/matrices are approx. equal
 
-template <typename OS> OS &operator<<(OS &ostr, vec4 const &v) {
-  ostr << '(' << v[0] << ',' << v[1] << ',' << v[2] << ',' << v[3] << ')';
-  return ostr;
-}
-
-template <glm::length_t L, typename T, glm::qualifier Q>
-void expect_close(glm::vec<L, T, Q> const &v, glm::vec<L, T, Q> const &w,
-                  T threshold = static_cast<T>(epsilon)) {
-
-  EXPECT_LT(glm::length(v - w), epsilon)
-      << "First vector: " << v << "\nSecond vector: " << w;
-}
-
-template <glm::length_t R, glm::length_t C, typename T, glm::qualifier Q>
-void expect_close(glm::mat<R, C, T, Q> const &v, glm::mat<R, C, T, Q> const &w,
-                  T threshold = static_cast<T>(epsilon)) {
-  glm::mat<R, C, T, Q> diff = v - w;
-  EXPECT_LT(glm::trace(diff * glm::transpose(diff)), epsilon);
-      //<< "First matrix: " << v << "\nSecond matrix: " << w;
-}
 
 TEST(Lorentz, DotProduct) {
   EXPECT_EQ(glm::lorentz::dot(glm::vec4{0, 0, 0, 1}, glm::vec4{0, 0, 0, 1}),
@@ -89,7 +71,7 @@ TEST(Lorentz, Normalize) {
 
 TEST(Lorentz, Boost) { 
   
-  vec4 v{0, 0, 0, 1};
+  glm::vec4 v{0, 0, 0, 1};
   float d = 0.1f;
   float coshd = std::cosh(d), sinhd = std::sinh(d);
 

@@ -7,6 +7,8 @@
 #include "vector_types.h"
 #include "glm_lorentz.h"
 
+namespace hyperbolic {
+
 struct lorentz_lie_algebra_t {
   using scalar_t = typename vec3::value_type;
   vec3 rotational{0.0f}; // Anti-symmetric part of Lie algebra
@@ -26,14 +28,13 @@ struct lorentz_lie_algebra_t {
   static lorentz_lie_algebra_t from_matrix(mat4 const &A);
 };
 
-
 inline lorentz_lie_algebra_t operator*(lorentz_lie_algebra_t::scalar_t c,
-                                lorentz_lie_algebra_t const &b) {
+                                       lorentz_lie_algebra_t const &b) {
   return b * c;
 }
 
 inline lorentz_lie_algebra_t bracket(lorentz_lie_algebra_t const &a,
-                              lorentz_lie_algebra_t const &b) {
+                                     lorentz_lie_algebra_t const &b) {
   return {glm::cross(a.rotational, b.rotational) - glm::cross(a.boost, b.boost),
           glm::cross(a.rotational, b.boost) +
               glm::cross(a.boost, b.rotational)};
@@ -54,7 +55,8 @@ lorentz_lie_algebra_t::operator-(lorentz_lie_algebra_t const &b) const {
   return {rotational - b.rotational, boost - b.boost};
 }
 
-inline lorentz_lie_algebra_t lorentz_lie_algebra_t::operator*(scalar_t c) const {
+inline lorentz_lie_algebra_t
+lorentz_lie_algebra_t::operator*(scalar_t c) const {
   return {rotational * c, boost * c};
 }
 
@@ -108,15 +110,15 @@ inline lorentz_lie_algebra_t lorentz_lie_algebra_t::from_matrix(mat4 const &A) {
   return lorentz_lie_algebra_t{vec3{A[1][2], A[2][0], A[0][1]}, vec3{A[3]}};
 }
 
-inline mat4 to_matrix(lorentz_lie_algebra_t const &v) {
-}
+inline mat4 to_matrix(lorentz_lie_algebra_t const &v) {}
 
 inline ImaginaryExtension<mat2> to_sl2(lorentz_lie_algebra_t const &v) {
   vec3 const &e = v.rotational;
   vec3 const &f = v.boost;
 
-  return ImaginaryExtension<mat2>{0.5f * mat2{f[2], f[0] - e[1], f[0] + e[1], -f[2]},
-                                  0.5f * mat2{-e[2], e[0] - f[1], e[0] + f[1], e[2]}};
+  return ImaginaryExtension<mat2>{
+      0.5f * mat2{f[2], f[0] + e[1], f[0] - e[1], -f[2]},
+      0.5f * mat2{e[2], e[0] - f[1], e[0] + f[1], -e[2]}};
 }
 
 inline mat4 exponential(lorentz_lie_algebra_t const &v) {
@@ -136,7 +138,6 @@ inline mat4 exponential(lorentz_lie_algebra_t const &v) {
   std::complex<T> const sinc_a = (std::norm(a) < 1e-12) ? a : sin(a) / a;
   std::complex<T> const cos_a = cos(a);
 
-
   // exp(A) = cos(a) I + sin(a) / a A
   ImaginaryExtension<mat2> expA =
       ImaginaryExtension<mat2>{mat2(cos_a.real()), mat2(cos_a.imag())} +
@@ -144,3 +145,5 @@ inline mat4 exponential(lorentz_lie_algebra_t const &v) {
 
   return glm::lorentz::detail::action_via_hermitian_matrix(expA);
 }
+
+} // namespace hyperbolic
