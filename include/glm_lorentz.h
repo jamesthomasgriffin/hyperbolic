@@ -270,17 +270,17 @@ struct perform_gram_schmidt_normalised<mat<4, R, T, Q>, T, Aligned> {
   GLM_FUNC_QUALIFIER GLM_CONSTEXPR static mat<4, R, T, Q>&
   call(mat<4, R, T, Q> &m) {
         
-    m[3] *= inversesqrt(-lorentz::dot(m[3], m[3]));
+    m[3] = lorentz::normalize(m[3], -1);
 
     m[2] += lorentz::dot(m[3], m[2]) * m[3];
-    m[2] *= inversesqrt(lorentz::dot(m[2], m[2]));
+    m[2] = lorentz::normalize(m[2], 1);
 
     m[1] += lorentz::dot(m[3], m[1]) * m[3] - lorentz::dot(m[2], m[1]) * m[2];
-    m[1] *= inversesqrt(lorentz::dot(m[1], m[1]));
+    m[1] = lorentz::normalize(m[1], 1);
 
     m[0] += lorentz::dot(m[3], m[0]) * m[3] - lorentz::dot(m[2], m[0]) * m[2] -
             lorentz::dot(m[1], m[0]) * m[1];
-    m[0] *= inversesqrt(lorentz::dot(m[0], m[0]));
+    m[0] = lorentz::normalize(m[0], 1);
 
     return m;
   }
