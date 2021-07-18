@@ -16,52 +16,11 @@ namespace hyperbolic {
 
 namespace lorentz = glm::lorentz;
 
-inline scalar_t distance(vec4 const &p, vec4 const &q) {
-  return std::acosh(-lorentz::dot(p, q));
-}
+inline scalar_t distance(vec4 const &p, vec4 const &q);
+
+inline vec4 move_d_from_p_to_q(scalar_t d, vec4 const &p, vec4 const &q);
 
 namespace detail {
-
-// A class that represents an angle as a pair of cos/sin or cosh/sinh values.
-template <int SIGN> class angle {
-  scalar_t c, s;
-  static_assert(SIGN * SIGN == 1, "SIGN must be +/-1");
-
-public:
-  angle() : c{1}, s{0} {}
-  explicit angle(scalar_t theta)
-      : c{(SIGN == 1) ? std::cosh(theta) : std::cos(theta)}, s{(SIGN == 1) ? std::sinh(theta)
-                                                                 : std::sin(theta)} {
-  }
-
-  scalar_t get_angle() const { return (SIGN == 1) ? asinh(s) : atan2(s, c); }
-  scalar_t get_c() const { return c; }
-  scalar_t get_s() const { return s; }
-
-  operator scalar_t() const { return get_angle(); };
-
-  angle operator+(angle const &a) const {
-    return angle{c * a.c + SIGN * s * a.s, c * a.s + s * a.c};
-  }
-
-  angle& operator+=(angle const &a) const {
-    T old_c = c;
-    c = c * a.c + SIGN * s * a.s;
-    s = old_c * a.s + s * a.c;
-    return *this;
-  }
-
-  angle operator-(angle const &a) const {
-    return angle{c * a.c + s * a.s, SIGN * c * a.s + s * a.c};
-  }
-
-  angle operator-() const { return angle{c, -s}; }
-
-  static angle unsafe_bypass_checks(scalar_t _c, scalar_t _s) { return angle{_c, _s}; }
-
-private:
-  angle(scalar_t _c, scalar_t _s) : c{_c}, s{_s} {};
-};
 
 inline void assert_close(scalar_t a, scalar_t b,
                          scalar_t epsilon = static_cast<scalar_t>(1e-6)) {
@@ -88,6 +47,60 @@ inline void assert_null(vec4 const &v) {
   assert_close(lorentz::dot(v, v), 0);
 }
 
+// A class that represents an angle as a pair of cos/sin or cosh/sinh values.
+template <int SIGN> class angle {
+  scalar_t c, s;
+  static_assert(SIGN * SIGN == 1, "SIGN must be +/-1");
+
+public:
+  angle() : c{1}, s{0} {}
+  explicit angle(scalar_t theta)
+      : c{(SIGN == 1) ? std::cosh(theta) : std::cos(theta)}, s{(SIGN == 1) ? std::sinh(theta)
+                                                                 : std::sin(theta)} {
+  }
+
+  scalar_t get_angle() const { return (SIGN == 1) ? asinh(s) : atan2(s, c); }
+  scalar_t get_c() const { return c; }
+  scalar_t get_s() const { return s; }
+
+  operator scalar_t() const { return get_angle(); };
+
+  angle operator+(angle const &a) const {
+    return angle{c * a.c + SIGN * s * a.s, c * a.s + s * a.c};
+  }
+
+  angle& operator+=(angle const &a) {
+    scalar_t old_c = c;
+    c = c * a.c + SIGN * s * a.s;
+    s = old_c * a.s + s * a.c;
+    return *this;
+  }
+
+  angle operator-(angle const &a) const {
+    return angle{c * a.c - SIGN * s * a.s, -c * a.s + s * a.c};
+  }
+
+  angle &operator-=(angle const &a) {
+    scalar_t old_c = c;
+    c = c * a.c - SIGN * s * a.s;
+    s = -old_c * a.s + s * a.c;
+    return *this;
+  }
+
+  angle operator-() const { return angle{c, -s}; }
+
+  static angle unsafe_bypass_checks(scalar_t _c, scalar_t _s) { return angle{_c, _s}; }
+  static angle between_points(vec4 const& p, vec4 const& q) {
+    scalar_t c = (SIGN == 1) ? -lorentz::dot(p, q) : glm::dot(p, q);
+    scalar_t s = glm::sqrt(SIGN * (c * c - 1));
+    return angle{c, s};
+  }
+
+private:
+  angle(scalar_t _c, scalar_t _s) : c{_c}, s{_s} {};
+};
+
+
 } // namespace detail
 
 using spherical_angle = detail::angle<-1>;
@@ -98,6 +111,14 @@ inline scalar_t cos(spherical_angle const &angle) { return angle.get_c(); }
 inline scalar_t sinh(hyperbolic_angle const &angle) { return angle.get_s(); }
 inline scalar_t cosh(hyperbolic_angle const &angle) { return angle.get_c(); }
 
+inline scalar_t distance(vec4 const &p, vec4 const &q) {
+  return std::acosh(-lorentz::dot(p, q));
+}
+
+inline vec4 move_d_from_p_to_q(hyperbolic_angle d, vec4 const& p, vec4 const& q) {
+  hyperbolic_angle const pq = hyperbolic_angle::between_points(p, q);
+  return (sinh(pq - d) * p + sinh(d) * q) / sinh(pq);
+}
 
 inline vec4 reflect(vec4 const &plane, vec4 const &v) {
   detail::assert_unit_tangent(plane);

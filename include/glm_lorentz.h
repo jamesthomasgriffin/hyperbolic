@@ -72,7 +72,7 @@ GLM_FUNC_DECL mat<L, L, T, Q> parabolic(mat<L, L, T, Q> const &M, T dist,
                                              int axis1, int axis2, int sgn);
 
 template <length_t L, typename T, qualifier Q>
-GLM_FUNC_DECL mat<L, L, T, Q> parabolic(vec<L, T, Q> const &v, T dist,
+GLM_FUNC_DECL vec<L, T, Q> parabolic(vec<L, T, Q> const &v, T dist,
                                              int axis1, int axis2, int sgn);
 
 namespace detail {
@@ -354,9 +354,9 @@ struct compute_parabolic<mat<4, 4, T, Q>, T, Aligned> {
     return M * call(dist, axis1, axis2, sgn);
   }
 
-  GLM_FUNC_QUALIFIER static mat<4, 4, T, Q>
+  GLM_FUNC_QUALIFIER static vec<4, T, Q>
   call(vec<4, T, Q> const &v, T dist, int axis1, int axis2, int sgn) {
-    return v * call(dist, axis1, axis2, sgn);
+    return call(dist, axis1, axis2, sgn) * v;
   }
 };
 
@@ -603,7 +603,7 @@ GLM_FUNC_QUALIFIER mat<L, L, T, Q> parabolic(mat<L, L, T, Q> const &M, T dist,
 }
 
 template <length_t L, typename T, qualifier Q>
-GLM_FUNC_QUALIFIER mat<L, L, T, Q> parabolic(vec<L, T, Q> const &v, T dist,
+GLM_FUNC_QUALIFIER vec<L, T, Q> parabolic(vec<L, T, Q> const &v, T dist,
                                              int axis1, int axis2, int sgn) {
   GLM_STATIC_ASSERT(std::numeric_limits<T>::is_iec559,
                     "'parabolic' accepts only floating-point inputs");
