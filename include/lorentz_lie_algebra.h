@@ -6,13 +6,17 @@
 
 #include "vector_types.h"
 #include "glm_lorentz.h"
+#include "glm_traits.h"
 
 namespace hyperbolic {
 
 struct lorentz_lie_algebra_t {
   using scalar_t = typename vec3::value_type;
-  vec3 rotational{0.0f}; // Anti-symmetric part of Lie algebra
-  vec3 boost{0.0f};      // Symmetric part of Lie algebra
+  using vec3_t = vec3;
+  using vec4_t = vec4;
+  using mat4_t = mat4;
+  vec3_t rotational{0.0f}; // Anti-symmetric part of Lie algebra
+  vec3_t boost{0.0f};      // Symmetric part of Lie algebra
 
   bool operator==(lorentz_lie_algebra_t const &b) const;
   bool operator!=(lorentz_lie_algebra_t const &b) const;
@@ -130,18 +134,6 @@ inline lorentz_lie_algebra_t lorentz_lie_algebra_t::from_matrix(mat4 const &A) {
 
 namespace detail {
 
-namespace traits {
-
-template <typename M> struct mat2_to_vec4 {};
-template <typename M> struct mat2_to_vec3 {};
-template <typename M> struct mat2_to_mat4 {};
-
-template<typename T, glm::qualifier Q> struct mat2_to_vec4<glm::mat<2, 2, T, Q>> { using type = glm::vec<4, T, Q>; };
-template<typename T, glm::qualifier Q> struct mat2_to_vec3<glm::mat<2, 2, T, Q>> { using type = glm::vec<3, T, Q>; };
-template<typename T, glm::qualifier Q> struct mat2_to_mat4<glm::mat<2, 2, T, Q>> { using type = glm::mat<4, 4, T, Q>; };
-
-} // namespace traits
-
 template<typename M2>
 inline std::complex<typename M2::value_type> det(ImaginaryExtension<M2> const &A) {
   using T = typename mat2::value_type;
@@ -157,7 +149,7 @@ struct sl2_lie_algebra {
   ImaginaryExtension<M2> matrix{M2{1}};
 
   static sl2_lie_algebra from(lorentz_lie_algebra_t const &v) {
-    using vec_t = typename traits::mat2_to_vec3<M2>::type;
+    using vec_t = typename glm::traits::to_vec<3, M2>::type;
     vec_t const &w = v.rotational;
     vec_t const &b = v.boost;
 
@@ -188,8 +180,8 @@ inline ImaginaryExtension<M2> exponential(sl2_lie_algebra<M2> const& A) {
 }
 
 template<typename M2>
-inline typename traits::mat2_to_vec4<M2>::type hermitian_matrix_to_vec(ImaginaryExtension<M2> const &M) {
-  using vec_t = typename traits::mat2_to_vec4<M2>::type;
+inline typename glm::traits::to_vec<4, M2>::type hermitian_matrix_to_vec(ImaginaryExtension<M2> const &M) {
+  using vec_t = typename glm::traits::to_vec<4, M2>::type;
   vec_t result{};
   result[0] = M.real[0][1];
   result[1] = M.imag[1][0];
@@ -200,9 +192,9 @@ inline typename traits::mat2_to_vec4<M2>::type hermitian_matrix_to_vec(Imaginary
 
 // a simplification of hermitian_matrix_to_vec for when M is real and symmetric
 template <typename M2>
-inline typename traits::mat2_to_vec4<M2>::type
+inline typename glm::traits::to_vec<4, M2>::type
 symmetric_matrix_to_vec(M2 const &M) {
-  using vec_t = typename traits::mat2_to_vec4<M2>::type;
+  using vec_t = typename glm::traits::to_vec<4, M2>::type;
   vec_t result{};
   result[0] = M[0][1];
   result[1] = 0;
@@ -220,12 +212,12 @@ symmetric_matrix_to_vec(M2 const &M) {
 //
 // and M* is the conjugate transpose of M
 template <typename M2>
-inline typename traits::mat2_to_mat4<M2>::type
+inline typename glm::traits::to_mat<4, 4, M2>::type
 action_via_hermitian_matrix(ImaginaryExtension<M2> const &M) {
 
   ImaginaryExtension<M2> const Mct{glm::transpose(M.real),
                                      -glm::transpose(M.imag)};
-  using return_t = typename traits::mat2_to_mat4<M2>::type;
+  using return_t = typename glm::traits::to_mat<4, 4, M2>::type;
 
   // NB Ew is the identity so isn't needed
   ImaginaryExtension<M2> Ex{M2{0, 1, 1, 0}, M2{0, 0, 0, 0}};
@@ -243,9 +235,9 @@ action_via_hermitian_matrix(ImaginaryExtension<M2> const &M) {
 // a simplification of action_via_hermitian_matrix for when M is real and
 // symmetric
 template <typename M2>
-inline typename traits::mat2_to_mat4<M2>::type action_via_symmetric_matrix(
+inline typename glm::traits::to_mat<4, 4, M2>::type action_via_symmetric_matrix(
     M2 const &M) {
-  using return_t = typename traits::mat2_to_mat4<M2>::type;
+  using return_t = typename glm::traits::to_mat<4, 4, M2>::type;
 
   M2 const Mct = glm::transpose(M);
 
@@ -274,20 +266,6 @@ inline mat4 exponential(lorentz_lie_algebra_t const &v) {
   sl2 A = sl2::from(v);
 
   ImaginaryExtension<mat2> expA = exponential(A);
-
-  //std::complex<T> const detA{glm::dot(w, w) / 4 - glm::dot(b, b) / 4,
-  //                           glm::dot(w, b) / 2};
-  //
-  //std::complex<T> const a =
-  //    std::sqrt(detA); // Below values are independent of chosen root
-  //
-  //std::complex<T> const sinc_a = (std::norm(a) < 1e-12) ? a : sin(a) / a;
-  //std::complex<T> const cos_a = cos(a);
-  //
-  //// exp(A) = cos(a) I + sin(a) / a A
-  //ImaginaryExtension<mat2> expA =
-  //    ImaginaryExtension<mat2>{mat2(cos_a.real()), mat2(cos_a.imag())} +
-  //    ImaginaryExtension<T>{sinc_a.real(), sinc_a.imag()} * A;
 
   return detail::action_via_hermitian_matrix(expA);
 }
