@@ -10,7 +10,7 @@
 #include "glm_assertions.h"  // For checking whether vectors/matrices are approx. equal
 
 namespace lorentz = glm::lorentz;
-
+using lie_algebra_t = hyperbolic::lorentz_lie_algebra_t;
 
 
 TEST(LieAlgebra, Exponential) {
@@ -38,13 +38,28 @@ TEST(LieAlgebra, Exponential) {
 TEST(LieAlgebra, MatrixRepresentation) {
 
   {
-    SCOPED_TRACE("Expected matrix form");
+    // Explicit check
     glm::vec3 w{1, 2, 3};
     glm::vec3 b{4, 5, 6};
     glm::mat4 W = hyperbolic::lorentz_lie_algebra_t{w, b}.to_matrix();
     glm::mat4 Wexpected{0, 3, -2, 4, -3, 0, 1, 5, 2, -1, 0, 6, 4, 5, 6, 0};
-    expect_close(W, Wexpected);
+    EXPECT_EQ(W, Wexpected);
   }
+
+  glm::vec3 const rotation{0.1f, 0.2f, 0.3f};
+  glm::vec3 const boost{1, 2, 3};
+  lie_algebra_t const g{rotation, boost};
+
+  glm::mat4 const G = g.to_matrix();
+  glm::mat3 const R = glm::mat3{G};
+
+  ASSERT_EQ(glm::vec3{G[3]}, boost);
+  ASSERT_EQ(R, -glm::transpose(R));
+
+  glm::vec3 const v{4, 5, 6};
+  ASSERT_EQ(glm::cross(rotation, v), R * v);
+
+  ASSERT_EQ(lie_algebra_t::from_matrix(G), g);
 }
 
 TEST(LieAlgebra, Bracket) {

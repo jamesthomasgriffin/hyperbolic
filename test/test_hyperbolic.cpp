@@ -8,6 +8,7 @@
 
 namespace lorentz = glm::lorentz;
 
+
 TEST(Hyperbolic, Distance) {
   glm::vec3 dir{0.3, 1.1, -0.2};
   glm::mat4 B = lorentz::boost(dir);
@@ -43,4 +44,37 @@ TEST(Hyperbolic, Interpolation) {
 
   EXPECT_NEAR(lorentz::dot(r, r), -1.0f, epsilon);
   EXPECT_NEAR(hyperbolic::distance(p, r), d, 2 * epsilon);
+}
+
+
+TEST(Hyperbolic, Details) { 
+  {
+    glm::vec3 const rotation{0.25f, 0.5f, 1.5f};
+    float const magnitude = glm::length(rotation);
+    ASSERT_LT(magnitude, 3.1415f);
+
+    glm::vec3 const axis = glm::normalize(rotation);
+    glm::mat4 const R = glm::rotate(glm::mat4{1}, magnitude, axis);
+
+    glm::mat3 const log_R =
+        hyperbolic::detail::log_special_orthogonal_matrix(R);
+
+    ASSERT_EQ(log_R, -glm::transpose(log_R));
+
+    glm::vec3 const r{log_R[1][2], log_R[2][0], log_R[0][1]};
+    expect_close(r, rotation);
+  }
+
+  {
+    // A different path is used for rotations close to pi
+    glm::mat3 R{1, 0, 0, 0, -1, 0, 0, 0, -1};
+
+    glm::mat3 const log_R =
+        hyperbolic::detail::log_special_orthogonal_matrix(R);
+    ASSERT_EQ(log_R, -glm::transpose(log_R));
+
+    glm::vec3 const r{log_R[1][2], log_R[2][0], log_R[0][1]};
+
+    expect_close(glm::abs(r), glm::vec3{3.1415926f, 0, 0});
+  }
 }
