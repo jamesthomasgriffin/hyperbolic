@@ -196,7 +196,7 @@ inline mat4 affine_transform_to_hyperbolic(mat4 const &m) {
 
   // NB from_matrix looks only at the final column of log_m to extract the boost
   // direction which is exactly what we want
-  lorentz_lie_algebra_t S = lorentz_lie_algebra_t::from_matrix(log_m);
+  lorentz_lie_algebra_t<vec3> S = lorentz_lie_algebra_t<vec3>::from_matrix(log_m);
   return exponential(S);
 }
 

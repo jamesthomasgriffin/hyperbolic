@@ -13,7 +13,7 @@
 namespace hyperbolic {
 
 struct rigid_body_t {
-  using velocity_t = lorentz_lie_algebra_t;
+  using velocity_t = lorentz_lie_algebra_t<vec3>;
   using scalar_t = vec3::value_type;
 
   mat4 frame{1.0f}; // A Lorentz matrix
@@ -136,7 +136,7 @@ inline void rigid_body_t::apply_impulse(vec4 const &location,
 inline void rigid_body_t::apply_local_impulse(vec4 const &location,
                                               vec4 const &direction) {
   // Convert impulse into lie algebra element
-  lorentz_lie_algebra_t imp = calculate_local_impulse(location, direction);
+  velocity_t imp = calculate_local_impulse(location, direction);
 
   // Convert back to velocity
   velocity += apply_inverse_inertia(imp);
