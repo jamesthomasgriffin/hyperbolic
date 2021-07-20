@@ -2,8 +2,9 @@
 
 #include <stdexcept>
 
-template<typename T>
-struct is_imaginary_extension {};
+namespace jtg {
+
+template <typename T> struct is_imaginary_extension {};
 
 template <typename R> struct ImaginaryExtension {
 
@@ -41,8 +42,9 @@ template <typename R> struct ImaginaryExtension {
     imag -= b.imag;
     return *this;
   }
-  template<typename S>
-  constexpr auto operator*(ImaginaryExtension<S> const &b) const -> ImaginaryExtension<decltype(real * b.real)> {
+  template <typename S>
+  constexpr auto operator*(ImaginaryExtension<S> const &b) const
+      -> ImaginaryExtension<decltype(real * b.real)> {
     return ImaginaryExtension<decltype(real * b.real)>{
         real * b.real - imag * b.imag, real * b.imag + imag * b.real};
   }
@@ -53,7 +55,9 @@ template <typename R> struct ImaginaryExtension {
     return *this;
   }
   constexpr ImaginaryExtension operator-() const {
-    return ImaginaryExtension{0 - real, 0 - imag};  // Stops MSVC complaining about unary minus for unsigned types
+    return ImaginaryExtension{0 - real,
+                              0 - imag}; // Stops MSVC complaining about unary
+                                         // minus for unsigned types
   }
 
   template <typename S> constexpr operator ImaginaryExtension<S>() const {
@@ -71,8 +75,10 @@ template <typename R> void swap(R &a, R &b) {
   b = a;
 }
 
-template <typename R, typename S, std::enable_if_t<!is_imaginary_extension<R>::value>>
-auto operator*(R r, ImaginaryExtension<S> const &a) -> ImaginaryExtension<decltype(r * a.real)> {
+template <typename R, typename S,
+          std::enable_if_t<!is_imaginary_extension<R>::value>>
+auto operator*(R r, ImaginaryExtension<S> const &a)
+    -> ImaginaryExtension<decltype(r * a.real)> {
   return ImaginaryExtension<R>{a.real * r, a.imag * r};
 }
 
@@ -107,14 +113,14 @@ template <typename Z> struct GaussianInteger : public ImaginaryExtension<Z> {
       d *= -1;
     }
 
-    auto quot = [](Z a, Z b) { 
+    auto quot = [](Z a, Z b) {
       int sgn = (a < 0) ? -1 : 1;
       a = (a < 0) ? -a : a;
 
       Z q = a / b, r = a % b;
-      return sgn *((2 * r <= b) ? q : q + 1);
+      return sgn * ((2 * r <= b) ? q : q + 1);
     };
-    
+
     return GaussianInteger{quot(re, d), quot(im, d)};
   }
 
@@ -172,3 +178,5 @@ template <typename T> struct EuclidsAlgorithm {
     return Result{a, c, d};
   }
 };
+
+} // namespace jtg

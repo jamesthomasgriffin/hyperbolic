@@ -9,50 +9,55 @@
 #include "glm_lorentz.h"
 #include "lorentz_lie_algebra.h"
 
-#include "imaginary_extension.h"
-
-
 namespace hyperbolic {
 
 namespace lorentz = glm::lorentz;
 
-template<typename T, qualifier Q>
-inline typename T distance(glm::vec<4, T, Q> const &p, glm::vec<4, T, Q> const &q);
+template <typename T, qualifier Q>
+inline typename T distance(glm::vec<4, T, Q> const &p,
+                           glm::vec<4, T, Q> const &q);
 
-template<typename T, qualifier Q>
-inline glm::vec<4, T, Q> move_d_from_p_to_q(T d, glm::vec<4, T, Q> const &p, glm::vec<4, T, Q> const &q);
+template <typename T, qualifier Q>
+inline glm::vec<4, T, Q> move_d_from_p_to_q(T d, glm::vec<4, T, Q> const &p,
+                                            glm::vec<4, T, Q> const &q);
 
-template<typename T, qualifier Q> inline glm::vec<4, T, Q> midpoint(glm::vec<4, T, Q> const &p, glm::vec<4, T, Q> const &q);
+template <typename T, qualifier Q>
+inline glm::vec<4, T, Q> midpoint(glm::vec<4, T, Q> const &p,
+                                  glm::vec<4, T, Q> const &q);
 
-template<typename T, qualifier Q>
-inline glm::mat<4, 4, T, Q> affine_transform_to_hyperbolic(glm::mat<4, 4, T, Q> const &p);
+template <typename T, qualifier Q>
+inline glm::mat<4, 4, T, Q>
+affine_transform_to_hyperbolic(glm::mat<4, 4, T, Q> const &p);
 
 namespace detail {
 
-template<typename T, typename U>
-inline void assert_close(T a, U b,
-                         T epsilon = static_cast<T>(1e-6)) {
+template <typename T, typename U>
+inline void assert_close(T a, U b, T epsilon = static_cast<T>(1e-6)) {
   assert(abs(a - b) < epsilon);
 }
 
-template<typename T, qualifier Q>
+template <typename T, qualifier Q>
 inline void assert_unit_tangent(glm::vec<4, T, Q> const &v) {
   assert_close(lorentz::dot(v, v), 1);
 }
 
-template<typename T, qualifier Q> inline void assert_positive(glm::vec<4, T, Q> const &v) {
+template <typename T, qualifier Q>
+inline void assert_positive(glm::vec<4, T, Q> const &v) {
   assert(lorentz::dot(v, v) > 0);
 }
 
-template<typename T, qualifier Q> inline void assert_negative(glm::vec<4, T, Q> const &v) {
+template <typename T, qualifier Q>
+inline void assert_negative(glm::vec<4, T, Q> const &v) {
   assert(lorentz::dot(v, v) < 0);
 }
 
-template<typename T, qualifier Q> inline void assert_point(glm::vec<4, T, Q> const &v) {
+template <typename T, qualifier Q>
+inline void assert_point(glm::vec<4, T, Q> const &v) {
   assert_close(lorentz::dot(v, v), -1);
 }
 
-template<typename T, qualifier Q> inline void assert_null(glm::vec<4, T, Q> const &v) {
+template <typename T, qualifier Q>
+inline void assert_null(glm::vec<4, T, Q> const &v) {
   assert_close(lorentz::dot(v, v), 0);
 }
 
@@ -65,9 +70,8 @@ template <int SIGN, typename T> class angle {
 public:
   angle() : c{1}, s{0} {}
   explicit angle(T theta)
-      : c{(SIGN == 1) ? std::cosh(theta) : std::cos(theta)}, s{(SIGN == 1) ? std::sinh(theta)
-                                                                 : std::sin(theta)} {
-  }
+      : c{(SIGN == 1) ? std::cosh(theta) : std::cos(theta)},
+        s{(SIGN == 1) ? std::sinh(theta) : std::sin(theta)} {}
 
   T get_angle() const { return (SIGN == 1) ? asinh(s) : atan2(s, c); }
   T get_c() const { return c; }
@@ -79,7 +83,7 @@ public:
     return angle{c * a.c + SIGN * s * a.s, c * a.s + s * a.c};
   }
 
-  angle& operator+=(angle const &a) {
+  angle &operator+=(angle const &a) {
     T old_c = c;
     c = c * a.c + SIGN * s * a.s;
     s = old_c * a.s + s * a.c;
@@ -100,8 +104,9 @@ public:
   angle operator-() const { return angle{c, -s}; }
 
   static angle unsafe_bypass_checks(T _c, T _s) { return angle{_c, _s}; }
-  template<length_t L, qualifier Q>
-  static angle between_points(glm::vec<L, T, Q> const& p, glm::vec<L, T, Q> const& q) {
+  template <length_t L, qualifier Q>
+  static angle between_points(glm::vec<L, T, Q> const &p,
+                              glm::vec<L, T, Q> const &q) {
     T c = (SIGN == 1) ? -lorentz::dot(p, q) : glm::dot(p, q);
     T s = glm::sqrt(SIGN * (c * c - 1));
     return angle{c, s};
@@ -111,19 +116,18 @@ private:
   angle(T _c, T _s) : c{_c}, s{_s} {};
 };
 
-template<typename T, qualifier Q>
+template <typename T, qualifier Q>
 inline glm::mat<3, 3, T, Q>
 log_special_orthogonal_matrix(glm::mat<3, 3, T, Q> const &m) {
   using vec3_t = glm::vec<3, T, Q>;
   using mat3_t = glm::mat<3, 3, T, Q>;
 
   // NB angle is +ve, sign is encoded in K
-  mat3_t const sinc_angle_K =
-      (m - glm::transpose(m)) * static_cast<T>(0.5);
+  mat3_t const sinc_angle_K = (m - glm::transpose(m)) * static_cast<T>(0.5);
 
   T const cos_angle = (glm::trace(m) - 1) / 2;
   T const angle = glm::acos(cos_angle); // In [0, pi]
-  if (angle < static_cast<T>(1e-6))  // sinc is approx 1 for small angles
+  if (angle < static_cast<T>(1e-6))     // sinc is approx 1 for small angles
     return sinc_angle_K;
 
   T const sinc_angle = glm::sin(angle) / angle;
@@ -141,14 +145,17 @@ log_special_orthogonal_matrix(glm::mat<3, 3, T, Q> const &m) {
   T const cc1 = glm::dot(cand1, cand1);
   T const cc2 = glm::dot(cand2, cand2);
   T const cc3 = glm::dot(cand2, cand2);
-  vec3_t const cand = (cc1 > static_cast<T>(0.01)) ? cand1 : (cc2 > static_cast<T>(0.01)) ? cand2 : cand3;
+  vec3_t const cand = (cc1 > static_cast<T>(0.01))   ? cand1
+                      : (cc2 > static_cast<T>(0.01)) ? cand2
+                                                     : cand3;
   vec3_t const w = static_cast<T>(3.1415926) * glm::normalize(cand);
 
   return mat3_t{0, w[2], -w[1], -w[2], 0, w[0], w[1], -w[0], 0};
 }
 
-// m is assumed to be of the form of a 3x3 special orthogonal matrix and a 4-vector with 4th component 1
-template<typename T, qualifier Q>
+// m is assumed to be of the form of a 3x3 special orthogonal matrix and a
+// 4-vector with 4th component 1
+template <typename T, qualifier Q>
 inline glm::mat<4, 4, T, Q>
 log_special_affine_matrix(glm::mat<4, 4, T, Q> const &m) {
   using vec3_t = glm::vec<3, T, Q>;
@@ -180,40 +187,55 @@ log_special_affine_matrix(glm::mat<4, 4, T, Q> const &m) {
 
 } // namespace detail
 
-template<typename T> using spherical_angle = detail::angle<-1, T>;
+template <typename T> using spherical_angle = detail::angle<-1, T>;
 template <typename T> using hyperbolic_angle = detail::angle<1, T>;
 
-template<typename T> inline T sin(spherical_angle<T> const &angle) { return angle.get_s(); }
-template<typename T> inline T cos(spherical_angle<T> const &angle) { return angle.get_c(); }
-template<typename T> inline T sinh(hyperbolic_angle<T> const &angle) { return angle.get_s(); }
-template<typename T> inline T cosh(hyperbolic_angle<T> const &angle) { return angle.get_c(); }
+template <typename T> inline T sin(spherical_angle<T> const &angle) {
+  return angle.get_s();
+}
+template <typename T> inline T cos(spherical_angle<T> const &angle) {
+  return angle.get_c();
+}
+template <typename T> inline T sinh(hyperbolic_angle<T> const &angle) {
+  return angle.get_s();
+}
+template <typename T> inline T cosh(hyperbolic_angle<T> const &angle) {
+  return angle.get_c();
+}
 
-
-template<typename T, qualifier Q> T distance(glm::vec<4, T, Q> const &p, glm::vec<4, T, Q> const &q) {
+template <typename T, qualifier Q>
+T distance(glm::vec<4, T, Q> const &p, glm::vec<4, T, Q> const &q) {
   return std::acosh(-lorentz::dot(p, q));
 }
 
-template<typename T, qualifier Q>
-inline glm::vec<4, T, Q> move_d_from_p_to_q(hyperbolic_angle<T> d, glm::vec<4, T, Q> const& p, glm::vec<4, T, Q> const& q) {
-  using hyp_angle = hyperbolic_angle<T>; 
+template <typename T, qualifier Q>
+inline glm::vec<4, T, Q> move_d_from_p_to_q(hyperbolic_angle<T> d,
+                                            glm::vec<4, T, Q> const &p,
+                                            glm::vec<4, T, Q> const &q) {
+  using hyp_angle = hyperbolic_angle<T>;
   hyp_angle const pq = hyp_angle::between_points(p, q);
   return (sinh(pq - d) * p + sinh(d) * q) / sinh(pq);
 }
 
-template<typename T, qualifier Q> inline glm::vec<4, T, Q> reflect(glm::vec<4, T, Q> const &plane, glm::vec<4, T, Q> const &v) {
+template <typename T, qualifier Q>
+inline glm::vec<4, T, Q> reflect(glm::vec<4, T, Q> const &plane,
+                                 glm::vec<4, T, Q> const &v) {
   detail::assert_unit_tangent(plane);
   return v - 2 * lorentz::dot(plane, v) * plane;
 }
 
-template<typename T, qualifier Q> inline glm::vec<4, T, Q> midpoint(glm::vec<4, T, Q> const &p, glm::vec<4, T, Q> const &q) {
+template <typename T, qualifier Q>
+inline glm::vec<4, T, Q> midpoint(glm::vec<4, T, Q> const &p,
+                                  glm::vec<4, T, Q> const &q) {
   return lorentz::normalize(p + q);
 }
 
-template<typename T, qualifier Q>
-inline glm::mat<4, 4, T, Q> affine_transform_to_hyperbolic(glm::mat<4, 4, T, Q> const &m) {
-  using vec3_t = glm::vec<3,T, Q>;
+template <typename T, qualifier Q>
+inline glm::mat<4, 4, T, Q>
+affine_transform_to_hyperbolic(glm::mat<4, 4, T, Q> const &m) {
+  using vec3_t = glm::vec<3, T, Q>;
   using lie_algebra_t = lorentz_lie_algebra_t<vec3_t>;
-  
+
   glm::mat<4, 4, T, Q> log_m = detail::log_special_affine_matrix(m);
 
   // NB from_matrix looks only at the final column of log_m to extract the boost
@@ -223,7 +245,8 @@ inline glm::mat<4, 4, T, Q> affine_transform_to_hyperbolic(glm::mat<4, 4, T, Q> 
 }
 
 template <typename T, qualifier Q>
-inline glm::vec<4, T, Q> transport_unit_tangent_to(glm::vec<4, T, Q> const &u, glm::vec<4, T, Q> const &p) {
+inline glm::vec<4, T, Q> transport_unit_tangent_to(glm::vec<4, T, Q> const &u,
+                                                   glm::vec<4, T, Q> const &p) {
   detail::assert_point(p);
   detail::assert_unit_tangent(u);
 
@@ -232,7 +255,9 @@ inline glm::vec<4, T, Q> transport_unit_tangent_to(glm::vec<4, T, Q> const &u, g
 }
 
 template <typename T, qualifier Q>
-inline glm::mat<4, 4, T, Q> transport_frame_to(glm::mat<4, 4, T, Q> const &frame, glm::vec<4, T, Q> const &p) {
+inline glm::mat<4, 4, T, Q>
+transport_frame_to(glm::mat<4, 4, T, Q> const &frame,
+                   glm::vec<4, T, Q> const &p) {
   detail::assert_point(p);
 
   glm::mat<4, 4, T, Q> result{};
@@ -244,7 +269,8 @@ inline glm::mat<4, 4, T, Q> transport_frame_to(glm::mat<4, 4, T, Q> const &frame
 }
 
 template <typename T, qualifier Q>
-inline glm::vec<4, T, Q> transport_tangent_to(glm::vec<4, T, Q> const &v, glm::vec<4, T, Q> const &p) {
+inline glm::vec<4, T, Q> transport_tangent_to(glm::vec<4, T, Q> const &v,
+                                              glm::vec<4, T, Q> const &p) {
   detail::assert_point(p);
   detail::assert_positive(v);
 
@@ -254,7 +280,8 @@ inline glm::vec<4, T, Q> transport_tangent_to(glm::vec<4, T, Q> const &v, glm::v
 }
 
 template <typename T, qualifier Q>
-inline glm::vec<4, T, Q> closest_point_to_origin_in_plane(glm::vec<4, T, Q> const &plane) {
+inline glm::vec<4, T, Q>
+closest_point_to_origin_in_plane(glm::vec<4, T, Q> const &plane) {
   using vec4_t = glm::vec<4, T, Q>;
   detail::assert_unit_tangent(plane);
 
@@ -263,7 +290,9 @@ inline glm::vec<4, T, Q> closest_point_to_origin_in_plane(glm::vec<4, T, Q> cons
 }
 
 template <typename T, qualifier Q>
-inline glm::vec<4, T, Q> closest_point_in_plane(glm::vec<4, T, Q> const &p, glm::vec<4, T, Q> const &plane) {
+inline glm::vec<4, T, Q>
+closest_point_in_plane(glm::vec<4, T, Q> const &p,
+                       glm::vec<4, T, Q> const &plane) {
   detail::assert_point(p);
   detail::assert_unit_tangent(plane);
 

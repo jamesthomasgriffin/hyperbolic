@@ -1,9 +1,6 @@
 #pragma once
 
-
 #include "glm/glm.hpp"
-
-#include "imaginary_extension.h"
 
 namespace glm {
 
@@ -57,23 +54,20 @@ gram_schmidt_normalised(mat<C, R, T, Q> const &M);
 template <length_t L, typename T, qualifier Q>
 GLM_FUNC_DECL mat<L + 1, L + 1, T, Q> boost(vec<L, T, Q> const &dir);
 
-
 template <length_t L, length_t K, typename T, qualifier Q>
 GLM_FUNC_DECL mat<L, L, T, Q> boost(mat<L, L, T, Q> const &M,
-                                         vec<K, T, Q> const &dir);
-
+                                    vec<K, T, Q> const &dir);
 
 template <length_t L, typename T, qualifier Q>
-GLM_FUNC_DECL vec<L, T, Q> boost(vec<L, T, Q> const &v, T dist,
-                                      size_t axis);
+GLM_FUNC_DECL vec<L, T, Q> boost(vec<L, T, Q> const &v, T dist, size_t axis);
 
 template <length_t L, typename T, qualifier Q>
 GLM_FUNC_DECL mat<L, L, T, Q> parabolic(mat<L, L, T, Q> const &M, T dist,
-                                             int axis1, int axis2, int sgn);
+                                        int axis1, int axis2, int sgn);
 
 template <length_t L, typename T, qualifier Q>
-GLM_FUNC_DECL vec<L, T, Q> parabolic(vec<L, T, Q> const &v, T dist,
-                                             int axis1, int axis2, int sgn);
+GLM_FUNC_DECL vec<L, T, Q> parabolic(vec<L, T, Q> const &v, T dist, int axis1,
+                                     int axis2, int sgn);
 
 namespace detail {
 
@@ -92,7 +86,8 @@ template <typename M, typename T, bool Aligned> struct compute_parabolic {};
 
 template <typename M, typename T, bool Aligned> struct perform_gram_schmidt {};
 
-template <typename M, typename T, bool Aligned> struct perform_gram_schmidt_normalised {};
+template <typename M, typename T, bool Aligned>
+struct perform_gram_schmidt_normalised {};
 
 template <typename T, qualifier Q, bool Aligned>
 struct compute_dot<vec<2, T, Q>, T, Aligned> {
@@ -130,7 +125,8 @@ struct compute_normalize {
     T vv = lorentz::dot(v, v);
     return (vv == 0) ? v : v * inversesqrt(abs(vv));
   }
-  GLM_FUNC_QUALIFIER static vec<L, T, Q> call(vec<L, T, Q> const &v, int expected_sign) {
+  GLM_FUNC_QUALIFIER static vec<L, T, Q> call(vec<L, T, Q> const &v,
+                                              int expected_sign) {
     GLM_STATIC_ASSERT(std::numeric_limits<T>::is_iec559,
                       "'normalize' accepts only floating-point inputs");
     T vv = lorentz::dot(v, v);
@@ -228,21 +224,21 @@ struct compute_transpose<mat<2, 2, T, Q>, T, Aligned> {
   }
 };
 
-
 template <length_t DA, length_t DB, typename T, qualifier Q, bool Aligned>
 struct compute_outer_product {
-  GLM_FUNC_QUALIFIER static typename glm::detail::outerProduct_trait<DA, DB, T, Q>::type
-  call(vec<DA, T, Q> const &col, vec<DB, T, Q> const &row) {
+  GLM_FUNC_QUALIFIER static
+      typename glm::detail::outerProduct_trait<DA, DB, T, Q>::type
+      call(vec<DA, T, Q> const &col, vec<DB, T, Q> const &row) {
     typename glm::detail::outerProduct_trait<DA, DB, T, Q>::type result =
         glm::outerProduct(col, row);
-    result[DB-1] *= static_cast<float>(-1);
+    result[DB - 1] *= static_cast<float>(-1);
     return result;
   }
 };
 
 template <length_t R, typename T, qualifier Q, bool Aligned>
 struct perform_gram_schmidt<mat<4, R, T, Q>, T, Aligned> {
-  GLM_FUNC_QUALIFIER GLM_CONSTEXPR static mat<4, R, T, Q>&
+  GLM_FUNC_QUALIFIER GLM_CONSTEXPR static mat<4, R, T, Q> &
   call(mat<4, R, T, Q> &m) {
 
     vec<3, T, Q> invnorms{};
@@ -267,9 +263,9 @@ struct perform_gram_schmidt<mat<4, R, T, Q>, T, Aligned> {
 
 template <length_t R, typename T, qualifier Q, bool Aligned>
 struct perform_gram_schmidt_normalised<mat<4, R, T, Q>, T, Aligned> {
-  GLM_FUNC_QUALIFIER GLM_CONSTEXPR static mat<4, R, T, Q>&
+  GLM_FUNC_QUALIFIER GLM_CONSTEXPR static mat<4, R, T, Q> &
   call(mat<4, R, T, Q> &m) {
-        
+
     m[3] = lorentz::normalize(m[3], -1);
 
     m[2] += lorentz::dot(m[3], m[2]) * m[3];
@@ -307,8 +303,8 @@ struct compute_boost<mat<4, 4, T, Q>, T, Aligned> {
     return mat<4, 4, T, Q>{1} + sinchd * S + cosh_coeff * S2;
   }
 
-  GLM_FUNC_QUALIFIER static mat<4, 4, T, Q>
-  call(mat<4, 4, T, Q> const& M, vec<3, T, Q> const &dir) {
+  GLM_FUNC_QUALIFIER static mat<4, 4, T, Q> call(mat<4, 4, T, Q> const &M,
+                                                 vec<3, T, Q> const &dir) {
     return M * call(dir);
   }
 };
@@ -354,12 +350,11 @@ struct compute_parabolic<mat<4, 4, T, Q>, T, Aligned> {
     return M * call(dist, axis1, axis2, sgn);
   }
 
-  GLM_FUNC_QUALIFIER static vec<4, T, Q>
-  call(vec<4, T, Q> const &v, T dist, int axis1, int axis2, int sgn) {
+  GLM_FUNC_QUALIFIER static vec<4, T, Q> call(vec<4, T, Q> const &v, T dist,
+                                              int axis1, int axis2, int sgn) {
     return call(dist, axis1, axis2, sgn) * v;
   }
 };
-
 
 } // namespace detail
 
@@ -377,8 +372,8 @@ GLM_FUNC_QUALIFIER vec<L, T, Q> normalize(vec<L, T, Q> const &x) {
   GLM_STATIC_ASSERT(std::numeric_limits<T>::is_iec559,
                     "'normalize' accepts only floating-point inputs");
 
-  return detail::compute_normalize<L, T, Q, glm::detail::is_aligned<Q>::value>::call(
-      x);
+  return detail::compute_normalize<L, T, Q,
+                                   glm::detail::is_aligned<Q>::value>::call(x);
 }
 
 template <length_t L, typename T, qualifier Q>
@@ -387,8 +382,8 @@ GLM_FUNC_QUALIFIER vec<L, T, Q> normalize(vec<L, T, Q> const &x,
   GLM_STATIC_ASSERT(std::numeric_limits<T>::is_iec559,
                     "'normalize' accepts only floating-point inputs");
 
-  return detail::compute_normalize<L, T, Q, glm::detail::is_aligned<Q>::value>::call(
-      x, expected_sign);
+  return detail::compute_normalize<
+      L, T, Q, glm::detail::is_aligned<Q>::value>::call(x, expected_sign);
 }
 
 template <length_t L, typename T, qualifier Q>
@@ -433,12 +428,12 @@ GLM_FUNC_QUALIFIER vec<L, T, Q> transpose(vec<L, T, Q> const &v) {
 template <length_t DA, length_t DB, typename T, qualifier Q>
 GLM_FUNC_QUALIFIER typename glm::detail::outerProduct_trait<DA, DB, T, Q>::type
 outerProduct(vec<DA, T, Q> const &c, vec<DB, T, Q> const &r) {
-  GLM_STATIC_ASSERT(std::numeric_limits<T>::is_iec559,
-                    "'lorentzian outer product' accepts only floating-point inputs");
+  GLM_STATIC_ASSERT(
+      std::numeric_limits<T>::is_iec559,
+      "'lorentzian outer product' accepts only floating-point inputs");
   return detail::compute_outer_product<
       DA, DB, T, Q, glm::detail::is_aligned<Q>::value>::call(c, r);
 }
-
 
 template <length_t C, length_t R, typename T, qualifier Q>
 GLM_FUNC_QUALIFIER GLM_CONSTEXPR mat<C, R, T, Q> &
@@ -485,8 +480,7 @@ gram_schmidt_normalised(mat<C, R, T, Q> const &M) {
 }
 
 template <length_t L, typename T, qualifier Q>
-GLM_FUNC_QUALIFIER mat<L + 1, L + 1, T, Q>
-boost(vec<L, T, Q> const &dir) {
+GLM_FUNC_QUALIFIER mat<L + 1, L + 1, T, Q> boost(vec<L, T, Q> const &dir) {
   GLM_STATIC_ASSERT(std::numeric_limits<T>::is_iec559,
                     "'boost' accepts only floating-point inputs");
 
@@ -500,16 +494,16 @@ GLM_FUNC_QUALIFIER mat<L, L, T, Q> boost(mat<L, L, T, Q> const &M,
   GLM_STATIC_ASSERT(std::numeric_limits<T>::is_iec559,
                     "'boost' accepts only floating-point inputs");
 
-  GLM_STATIC_ASSERT(L == K + 1,
-                    "'boost' vector should have dimension one less than the matrix");
+  GLM_STATIC_ASSERT(
+      L == K + 1,
+      "'boost' vector should have dimension one less than the matrix");
 
   return lorentz::detail::compute_boost<
       mat<L, L, T, Q>, T, glm::detail::is_aligned<Q>::value>::call(M, dir);
 }
 
 template <length_t L, typename T, qualifier Q>
-GLM_FUNC_QUALIFIER vec<L, T, Q>
-boost(vec<L, T, Q> const& v, T dist, int axis) {
+GLM_FUNC_QUALIFIER vec<L, T, Q> boost(vec<L, T, Q> const &v, T dist, int axis) {
   GLM_STATIC_ASSERT(std::numeric_limits<T>::is_iec559,
                     "'boost' accepts only floating-point inputs");
 
@@ -531,7 +525,7 @@ GLM_FUNC_QUALIFIER mat<L, L, T, Q> parabolic(mat<L, L, T, Q> const &M, T dist,
 
 template <length_t L, typename T, qualifier Q>
 GLM_FUNC_QUALIFIER vec<L, T, Q> parabolic(vec<L, T, Q> const &v, T dist,
-                                             int axis1, int axis2, int sgn) {
+                                          int axis1, int axis2, int sgn) {
   GLM_STATIC_ASSERT(std::numeric_limits<T>::is_iec559,
                     "'parabolic' accepts only floating-point inputs");
 
@@ -574,8 +568,8 @@ template <length_t R, length_t C, typename T, qualifier Q>
 GLM_FUNC_QUALIFIER GLM_CONSTEXPR T trace(mat<R, C, T, Q> const &m) {
   GLM_STATIC_ASSERT(std::numeric_limits<T>::is_iec559,
                     "'trace' accepts only floating-point inputs");
-  return detail::compute_trace<
-      mat<R, C, T, Q>, T, glm::detail::is_aligned<Q>::value>::call(m);
+  return detail::compute_trace<mat<R, C, T, Q>, T,
+                               glm::detail::is_aligned<Q>::value>::call(m);
 }
 
 } // namespace glm

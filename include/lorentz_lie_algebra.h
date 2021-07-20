@@ -5,15 +5,18 @@
 #include <glm/glm.hpp>
 
 #include "glm_lorentz.h"
-//#include "glm_traits.h"
+
+#include "imaginary_extension.h"
 
 namespace hyperbolic {
+
+template<typename T>
+using ImaginaryExtension = jtg::ImaginaryExtension<T>;
 
 using qualifier = glm::qualifier;
 using length_t = glm::length_t;
 
-template<typename T, qualifier Q = glm::highp>
-struct lorentz_lie_algebra_t {
+template <typename T, qualifier Q = glm::highp> struct lorentz_lie_algebra_t {
   using scalar_t = T;
   using vec3_t = glm::vec<3, T, Q>;
   using vec4_t = glm::vec<4, T, Q>;
@@ -40,15 +43,17 @@ struct lorentz_lie_algebra_t {
   static lorentz_lie_algebra_t from_matrix(mat4_t const &A);
 };
 
-template<typename T, qualifier Q>
-inline lorentz_lie_algebra_t<T, Q> operator*(typename lorentz_lie_algebra_t<T, Q>::scalar_t c,
-                                       lorentz_lie_algebra_t<T, Q> const &b) {
+template <typename T, qualifier Q>
+inline lorentz_lie_algebra_t<T, Q>
+operator*(typename lorentz_lie_algebra_t<T, Q>::scalar_t c,
+          lorentz_lie_algebra_t<T, Q> const &b) {
   return b * c;
 }
 
-template<typename T, qualifier Q>
-inline lorentz_lie_algebra_t<T, Q> bracket(lorentz_lie_algebra_t<T, Q> const &a,
-                                     lorentz_lie_algebra_t<T, Q> const &b) {
+template <typename T, qualifier Q>
+inline lorentz_lie_algebra_t<T, Q>
+bracket(lorentz_lie_algebra_t<T, Q> const &a,
+        lorentz_lie_algebra_t<T, Q> const &b) {
   return {glm::cross(a.rotational, b.rotational) - glm::cross(a.boost, b.boost),
           glm::cross(a.rotational, b.boost) +
               glm::cross(a.boost, b.rotational)};
@@ -62,43 +67,44 @@ inline lorentz_lie_algebra_t<T, Q> wedge(glm::vec<4, T, Q> const &v,
   return {glm::cross(vec3_t{w}, vec3_t{v}), vec3_t{w[3] * v - v[3] * w}};
 }
 
-template<typename T, qualifier Q>
-inline bool
-lorentz_lie_algebra_t<T, Q>::operator==(lorentz_lie_algebra_t<T, Q> const &b) const {
+template <typename T, qualifier Q>
+inline bool lorentz_lie_algebra_t<T, Q>::operator==(
+    lorentz_lie_algebra_t<T, Q> const &b) const {
   return (rotational == b.rotational) && (boost == b.boost);
 }
 
-template<typename T, qualifier Q>
-inline bool
-lorentz_lie_algebra_t<T, Q>::operator!=(lorentz_lie_algebra_t<T, Q> const &b) const {
+template <typename T, qualifier Q>
+inline bool lorentz_lie_algebra_t<T, Q>::operator!=(
+    lorentz_lie_algebra_t<T, Q> const &b) const {
   return (rotational != b.rotational) || (boost != b.boost);
 }
 
-template<typename T, qualifier Q>
-inline lorentz_lie_algebra_t<T, Q>
-lorentz_lie_algebra_t<T, Q>::operator+(lorentz_lie_algebra_t<T, Q> const &b) const {
+template <typename T, qualifier Q>
+inline lorentz_lie_algebra_t<T, Q> lorentz_lie_algebra_t<T, Q>::operator+(
+    lorentz_lie_algebra_t<T, Q> const &b) const {
   return {rotational + b.rotational, boost + b.boost};
 }
 
-template<typename T, qualifier Q>
-inline lorentz_lie_algebra_t<T, Q>
-lorentz_lie_algebra_t<T, Q>::operator-(lorentz_lie_algebra_t<T, Q> const &b) const {
+template <typename T, qualifier Q>
+inline lorentz_lie_algebra_t<T, Q> lorentz_lie_algebra_t<T, Q>::operator-(
+    lorentz_lie_algebra_t<T, Q> const &b) const {
   return {rotational - b.rotational, boost - b.boost};
 }
 
-template<typename T, qualifier Q>
+template <typename T, qualifier Q>
 inline lorentz_lie_algebra_t<T, Q>
 lorentz_lie_algebra_t<T, Q>::operator*(scalar_t c) const {
   return {rotational * c, boost * c};
 }
 
-template<typename T, qualifier Q>
-inline glm::vec<4, T, Q> lorentz_lie_algebra_t<T, Q>::operator*(vec4_t const &v) const {
+template <typename T, qualifier Q>
+inline glm::vec<4, T, Q>
+lorentz_lie_algebra_t<T, Q>::operator*(vec4_t const &v) const {
   return vec4_t{glm::cross(rotational, vec3_t{v}) + v[3] * boost,
-              glm::dot(boost, vec3_t{v})};
+                glm::dot(boost, vec3_t{v})};
 }
 
-template<typename T, qualifier Q>
+template <typename T, qualifier Q>
 inline lorentz_lie_algebra_t<T, Q> &
 lorentz_lie_algebra_t<T, Q>::operator+=(lorentz_lie_algebra_t<T, Q> const &b) {
   rotational += b.rotational;
@@ -106,7 +112,7 @@ lorentz_lie_algebra_t<T, Q>::operator+=(lorentz_lie_algebra_t<T, Q> const &b) {
   return *this;
 }
 
-template<typename T, qualifier Q>
+template <typename T, qualifier Q>
 inline lorentz_lie_algebra_t<T, Q> &
 lorentz_lie_algebra_t<T, Q>::operator-=(lorentz_lie_algebra_t<T, Q> const &b) {
   rotational -= b.rotational;
@@ -114,27 +120,28 @@ lorentz_lie_algebra_t<T, Q>::operator-=(lorentz_lie_algebra_t<T, Q> const &b) {
   return *this;
 }
 
-template<typename T, qualifier Q>
-inline lorentz_lie_algebra_t<T, Q> &lorentz_lie_algebra_t<T, Q>::operator*=(scalar_t c) {
+template <typename T, qualifier Q>
+inline lorentz_lie_algebra_t<T, Q> &
+lorentz_lie_algebra_t<T, Q>::operator*=(scalar_t c) {
   rotational *= c;
   boost *= c;
   return *this;
 }
 
-template<typename T, qualifier Q>
+template <typename T, qualifier Q>
 inline lorentz_lie_algebra_t<T, Q>
 lorentz_lie_algebra_t<T, Q>::conjugated_by(mat4_t const &P) const {
   mat4_t M = P * to_matrix() * glm::lorentz::transpose(P);
   return from_matrix(M);
 }
 
-template<typename T, qualifier Q>
+template <typename T, qualifier Q>
 inline lorentz_lie_algebra_t<T, Q>
 lorentz_lie_algebra_t<T, Q>::conjugated_by(mat3_t const &P) const {
   return lorentz_lie_algebra_t{P * rotational, P * boost};
 }
 
-template<typename T, qualifier Q>
+template <typename T, qualifier Q>
 inline glm::mat<4, 4, T, Q> lorentz_lie_algebra_t<T, Q>::to_matrix() const {
   mat4_t result{0};
   result[3] = vec4_t{boost, 0};
@@ -150,8 +157,9 @@ inline glm::mat<4, 4, T, Q> lorentz_lie_algebra_t<T, Q>::to_matrix() const {
   return result;
 }
 
-template<typename T, qualifier Q>
-inline lorentz_lie_algebra_t<T, Q> lorentz_lie_algebra_t<T, Q>::from_matrix(mat4_t const &A) {
+template <typename T, qualifier Q>
+inline lorentz_lie_algebra_t<T, Q>
+lorentz_lie_algebra_t<T, Q>::from_matrix(mat4_t const &A) {
   return lorentz_lie_algebra_t{vec3_t{A[1][2], A[2][0], A[0][1]}, vec3_t{A[3]}};
 }
 
@@ -165,9 +173,8 @@ inline std::complex<T> det(ImaginaryExtension<glm::mat<2, 2, T, Q>> const &A) {
   std::complex<T> d{A.real[1][1], A.imag[1][1]};
   return a * d - b * c;
 }
-  
-template<typename T, qualifier Q>
-struct sl2_lie_algebra {
+
+template <typename T, qualifier Q> struct sl2_lie_algebra {
   using vec3_t = glm::vec<3, T, Q>;
   using mat2_t = glm::mat<2, 2, T, Q>;
 
@@ -184,8 +191,9 @@ struct sl2_lie_algebra {
 };
 
 template <typename T, qualifier Q>
-inline ImaginaryExtension<glm::mat<2,2,T,Q>> exponential(sl2_lie_algebra<T, Q> const& A) {
-  
+inline ImaginaryExtension<glm::mat<2, 2, T, Q>>
+exponential(sl2_lie_algebra<T, Q> const &A) {
+
   using mat2_t = glm::mat<2, 2, T, Q>;
   std::complex<T> const detA = det(A.matrix);
 
@@ -205,7 +213,7 @@ inline ImaginaryExtension<glm::mat<2,2,T,Q>> exponential(sl2_lie_algebra<T, Q> c
 
 template <typename T, qualifier Q>
 inline glm::vec<4, T, Q>
-hermitian_matrix_to_vec(ImaginaryExtension<glm::mat<2,2,T,Q>> const &M) {
+hermitian_matrix_to_vec(ImaginaryExtension<glm::mat<2, 2, T, Q>> const &M) {
   glm::vec<4, T, Q> result{};
   result[0] = M.real[0][1];
   result[1] = M.imag[1][0];
@@ -217,7 +225,7 @@ hermitian_matrix_to_vec(ImaginaryExtension<glm::mat<2,2,T,Q>> const &M) {
 // a simplification of hermitian_matrix_to_vec for when M is real and symmetric
 template <typename T, qualifier Q>
 inline glm::vec<4, T, Q>
-symmetric_matrix_to_vec(glm::mat<2,2,T,Q> const &M) {
+symmetric_matrix_to_vec(glm::mat<2, 2, T, Q> const &M) {
   glm::vec<4, T, Q> result{};
   result[0] = M[0][1];
   result[1] = 0;
@@ -240,7 +248,7 @@ action_via_hermitian_matrix(ImaginaryExtension<glm::mat<2, 2, T, Q>> const &M) {
 
   using mat2_t = glm::mat<2, 2, T, Q>;
   ImaginaryExtension<mat2_t> const Mct{glm::transpose(M.real),
-                                     -glm::transpose(M.imag)};
+                                       -glm::transpose(M.imag)};
 
   // NB Ew is the identity so isn't needed
   ImaginaryExtension<mat2_t> Ex{mat2_t{0, 1, 1, 0}, mat2_t{0, 0, 0, 0}};
@@ -258,10 +266,10 @@ action_via_hermitian_matrix(ImaginaryExtension<glm::mat<2, 2, T, Q>> const &M) {
 // a simplification of action_via_hermitian_matrix for when M is real and
 // symmetric
 template <typename T, qualifier Q>
-inline glm::mat<4, 4, T, Q> action_via_symmetric_matrix(
-    glm::mat<2, 2, T, Q> const &M) {
+inline glm::mat<4, 4, T, Q>
+action_via_symmetric_matrix(glm::mat<2, 2, T, Q> const &M) {
 
-  using mat2_t = glm::mat<2,2,T,Q>;
+  using mat2_t = glm::mat<2, 2, T, Q>;
   mat2_t const Mct = glm::transpose(M);
 
   // NB Ew is the identity so isn't needed
@@ -279,7 +287,7 @@ inline glm::mat<4, 4, T, Q> action_via_symmetric_matrix(
 
 } // namespace detail
 
-template<typename T, qualifier Q>
+template <typename T, qualifier Q>
 inline glm::mat<4, 4, T, Q> exponential(lorentz_lie_algebra_t<T, Q> const &v) {
   using mat2_t = glm::mat<2, 2, T, Q>;
   using sl2 = detail::sl2_lie_algebra<T, Q>;

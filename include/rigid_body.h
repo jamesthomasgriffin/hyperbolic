@@ -1,14 +1,13 @@
 #pragma once
 
 #include <array>
-#include <math.h>
+//#include <math.h>
 
-//#include "vector_types.h"
 #include <glm/glm.hpp>
 #include <glm/gtx/matrix_operation.hpp>
-#include "lorentz_lie_algebra.h"
 
 #include "hyperbolic.h"
+#include "lorentz_lie_algebra.h"
 
 namespace hyperbolic {
 
@@ -271,7 +270,7 @@ rigid_body_t<T, Q>::impulse_magnitude_from_inelastic_collision(
   T const disc = coeff1 * coeff1 - 4 * coeff0 * coeff2;
 
   if (disc >= 0)
-    return (-coeff1 + std::sqrt(disc)) / (2 * coeff2);
+    return (-coeff1 + glm::sqrt(disc)) / (2 * coeff2);
 
   // If no collision exists that satisfies the loss then return the minimum
   // energy as the best attempt
