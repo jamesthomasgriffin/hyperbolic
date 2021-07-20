@@ -10,7 +10,7 @@
 #include "glm_assertions.h"  // For checking whether vectors/matrices are approx. equal
 
 namespace lorentz = glm::lorentz;
-using lie_algebra_t = hyperbolic::lorentz_lie_algebra_t<glm::vec3>;
+using lie_algebra_t = hyperbolic::lorentz_lie_algebra_t<float>;
 
 
 TEST(LieAlgebra, Exponential) {

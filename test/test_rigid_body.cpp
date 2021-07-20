@@ -9,7 +9,7 @@ TEST(RigidBody, FreeMotion) {
   
   float delta_t = 0.001f;
 
-  hyperbolic::rigid_body_t rb{};
+  hyperbolic::rigid_body_t<float> rb{};
   rb.distributional_inertia = glm::vec3{0.1f, 0.2f, 0.3f};
 
   EXPECT_EQ(rb.kinetic_energy(), 0);

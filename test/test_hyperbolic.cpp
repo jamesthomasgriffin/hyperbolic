@@ -19,7 +19,7 @@ TEST(Hyperbolic, Distance) {
 }
 
 TEST(Hyperbolic, Angles) {
-  hyperbolic::hyperbolic_angle a{0.1f}, b{0.2f};
+  hyperbolic::hyperbolic_angle<float> a{0.1f}, b{0.2f};
 
   EXPECT_NEAR(static_cast<float>(a + b), 0.3f, epsilon);
   EXPECT_NEAR(static_cast<float>(a - b), -0.1f, epsilon);
@@ -35,7 +35,7 @@ TEST(Hyperbolic, Angles) {
 
 TEST(Hyperbolic, Interpolation) {
   float d = 0.1f;
-  hyperbolic::hyperbolic_angle a{d};
+  hyperbolic::hyperbolic_angle<float> a{d};
 
   glm::vec4 p = lorentz::normalize(glm::vec4{0.1f, 0.2f, 0.3f, 1.0f});
   glm::vec4 q = glm::vec4{1, 1, 1, 2};
@@ -57,7 +57,7 @@ TEST(Hyperbolic, Details) {
     glm::mat4 const R = glm::rotate(glm::mat4{1}, magnitude, axis);
 
     glm::mat3 const log_R =
-        hyperbolic::detail::log_special_orthogonal_matrix(R);
+        hyperbolic::detail::log_special_orthogonal_matrix(glm::mat3{R});
 
     ASSERT_EQ(log_R, -glm::transpose(log_R));
 

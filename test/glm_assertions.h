@@ -1,5 +1,6 @@
 #pragma once
 
+#include <glm/glm.hpp>
 
 constexpr float epsilon = 1e-6f;
 

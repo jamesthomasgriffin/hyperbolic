@@ -5,8 +5,9 @@
 namespace glm {
 namespace traits {
 
-template <length_t L, length_t M, typename TYPE> struct to_mat;
-template <length_t L, typename TYPE> struct to_vec;
+template <length_t L, length_t M, typename TYPE> struct to_mat {};
+template <length_t L, typename TYPE> struct to_vec{};
+template <length_t L, typename TYPE> struct has_components{};
 
 template <length_t L, length_t M, typename T, qualifier Q>
 struct to_mat<L, M, vec<4, T, Q>> { using type = mat<L, M, T, Q>; };
@@ -57,6 +58,16 @@ template <length_t L, typename T, qualifier Q>
 struct to_vec<L, mat<3, 2, T, Q>> { using type = vec<L, T, Q>; };
 template <length_t L, typename T, qualifier Q>
 struct to_vec<L, mat<2, 2, T, Q>> { using type = vec<L, T, Q>; };
+
+template <length_t L, typename T, qualifier Q>
+struct has_components<L, vec<L, T, Q>> {
+  bool value{true};
+};
+
+template <length_t L, length_t M, typename T, qualifier Q>
+struct has_components<L, mat<L, M, T, Q>> {
+  static bool const value{true};
+};
 
 } // namespace traits
 } // namespace glm
