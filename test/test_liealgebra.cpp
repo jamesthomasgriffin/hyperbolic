@@ -74,6 +74,16 @@ TEST(LieAlgebra, Bracket) {
   expect_close(Mgh, Mg * Mh - Mh * Mg);
 }
 
+TEST(LieAlgebra, Dot) {
+  lie_algebra_t g{{0.3, 1.1, -0.2}, {0.2, -0.1, -0.2}};
+  lie_algebra_t h{{0.1, 0.1, 0.2}, {0.3, 0.7, -0.1}};
+
+  glm::mat4 Mg = g.to_matrix();
+  glm::mat4 Mh = h.to_matrix();
+    
+  EXPECT_NEAR(hyperbolic::dot(g, h), glm::trace(glm::lorentz::transpose(Mg) * Mh), epsilon);
+}
+
 TEST(LieAlgebra, Wedge) {
 
   glm::vec4 const p{0.3, 1.1, -0.2, 1.5};

@@ -10,8 +10,7 @@
 
 namespace hyperbolic {
 
-template<typename T>
-using ImaginaryExtension = jtg::ImaginaryExtension<T>;
+template <typename T> using ImaginaryExtension = jtg::ImaginaryExtension<T>;
 
 using qualifier = glm::qualifier;
 using length_t = glm::length_t;
@@ -44,10 +43,15 @@ template <typename T, qualifier Q = glm::highp> struct lorentz_lie_algebra_t {
   static lorentz_lie_algebra_t from_matrix(mat4_t const &A);
 };
 
-template<typename T, qualifier Q>
-inline T dot(lorentz_lie_algebra_t<T, Q> const& g,
-  lorentz_lie_algebra_t<T, Q> const& h) {
-  return glm::dot(g.rotational, h.rotational) + glm::dot(g.boost, h.boost);
+// This is equivalent to the Frobenius inner product of matrices for the Lorentian
+// inner product, i.e. tr(G^T H), where G and H are the respective matrix
+// representations of lie algebra elements g and h and G^T is the Lorentzian
+// transpose.
+template <typename T, qualifier Q>
+inline T dot(lorentz_lie_algebra_t<T, Q> const &g,
+             lorentz_lie_algebra_t<T, Q> const &h) {
+  return 2 * glm::dot(g.rotational, h.rotational) -
+         2 * glm::dot(g.boost, h.boost);
 }
 
 template <typename T, qualifier Q>
@@ -58,7 +62,8 @@ operator*(typename lorentz_lie_algebra_t<T, Q>::scalar_t c,
 }
 
 template <typename T, qualifier Q>
-inline lorentz_lie_algebra_t<T, Q> lorentz_lie_algebra_t<T, Q>::operator-() const {
+inline lorentz_lie_algebra_t<T, Q>
+lorentz_lie_algebra_t<T, Q>::operator-() const {
   return {-rotational, -boost};
 }
 
