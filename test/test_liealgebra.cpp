@@ -74,6 +74,20 @@ TEST(LieAlgebra, Bracket) {
   expect_close(Mgh, Mg * Mh - Mh * Mg);
 }
 
+TEST(LieAlgebra, Wedge) {
+
+  glm::vec4 const p{0.3, 1.1, -0.2, 1.5};
+  glm::vec4 const n{0.3, 0.1, -0.2, 0.5};
+  lie_algebra_t const g = hyperbolic::wedge(p, n);
+
+  glm::mat4 const g_mat = g.to_matrix();
+
+  glm::mat4 const wedge =
+      glm::lorentz::outerProduct(p, n) - glm::lorentz::outerProduct(n, p);
+
+  expect_close(g_mat, wedge);
+}
+
 TEST(LieAlgebra, Action) {
 
   glm::vec3 dir{0.2, -0.1, -0.2};

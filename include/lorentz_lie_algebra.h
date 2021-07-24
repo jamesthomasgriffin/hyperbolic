@@ -31,6 +31,7 @@ template <typename T, qualifier Q = glm::highp> struct lorentz_lie_algebra_t {
   lorentz_lie_algebra_t operator+(lorentz_lie_algebra_t const &b) const;
   lorentz_lie_algebra_t operator-(lorentz_lie_algebra_t const &b) const;
   lorentz_lie_algebra_t operator*(scalar_t c) const;
+  lorentz_lie_algebra_t operator-() const;
   vec4_t operator*(vec4_t const &v) const;
 
   lorentz_lie_algebra_t &operator+=(lorentz_lie_algebra_t const &b);
@@ -43,11 +44,22 @@ template <typename T, qualifier Q = glm::highp> struct lorentz_lie_algebra_t {
   static lorentz_lie_algebra_t from_matrix(mat4_t const &A);
 };
 
+template<typename T, qualifier Q>
+inline T dot(lorentz_lie_algebra_t<T, Q> const& g,
+  lorentz_lie_algebra_t<T, Q> const& h) {
+  return glm::dot(g.rotational, h.rotational) + glm::dot(g.boost, h.boost);
+}
+
 template <typename T, qualifier Q>
 inline lorentz_lie_algebra_t<T, Q>
 operator*(typename lorentz_lie_algebra_t<T, Q>::scalar_t c,
           lorentz_lie_algebra_t<T, Q> const &b) {
   return b * c;
+}
+
+template <typename T, qualifier Q>
+inline lorentz_lie_algebra_t<T, Q> lorentz_lie_algebra_t<T, Q>::operator-() const {
+  return {-rotational, -boost};
 }
 
 template <typename T, qualifier Q>
@@ -59,12 +71,12 @@ bracket(lorentz_lie_algebra_t<T, Q> const &a,
               glm::cross(a.boost, b.rotational)};
 }
 
-// Result of v'w - w'v
+// Result of vw^t - wv^t
 template <typename T, qualifier Q>
 inline lorentz_lie_algebra_t<T, Q> wedge(glm::vec<4, T, Q> const &v,
                                          glm::vec<4, T, Q> const &w) {
   using vec3_t = glm::vec<3, T, Q>;
-  return {glm::cross(vec3_t{w}, vec3_t{v}), vec3_t{w[3] * v - v[3] * w}};
+  return {glm::cross(vec3_t{w}, vec3_t{v}), vec3_t{v[3] * w - w[3] * v}};
 }
 
 template <typename T, qualifier Q>

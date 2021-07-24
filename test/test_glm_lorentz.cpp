@@ -29,11 +29,14 @@ TEST(Lorentz, DotProduct) {
 }
 
 TEST(Lorentz, OuterProduct) {
-  glm::vec4 v{0.1f, 0.2f, 0.3f, 0.1f};
-  glm::vec4 w{-0.7f, 0.2f, 0.3f, 0.1f};
+  glm::vec4 const v{0.1f, 0.2f, 0.3f, 0.1f};
+  glm::vec4 const w{-0.7f, 0.2f, 0.3f, 0.1f};
 
-  EXPECT_EQ(glm::trace(glm::lorentz::outerProduct(v, w)),
-            glm::lorentz::dot(v, w));
+  glm::mat4 const op = glm::lorentz::outerProduct(v, w);
+
+  EXPECT_EQ(glm::trace(op), glm::lorentz::dot(v, w));
+
+  expect_close(op, glm::outerProduct(v, glm::lorentz::transpose(w)));
 }
 
 TEST(Lorentz, Trace) { EXPECT_EQ(glm::trace(glm::mat4{1.0f}), 4); }
