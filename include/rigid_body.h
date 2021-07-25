@@ -1,7 +1,6 @@
 #pragma once
 
 #include <array>
-//#include <math.h>
 
 #include <glm/glm.hpp>
 
@@ -25,6 +24,7 @@ template <typename T, qualifier Q = glm::highp> struct rigid_body_t {
   scalar_t rotational_energy() const;
   scalar_t boost_energy() const;
   scalar_t kinetic_energy() const;
+  velocity_t global_velocity() const;
   velocity_t local_momentum() const;
   velocity_t momentum() const;
   velocity_t calculate_free_acceleration() const;
@@ -33,7 +33,9 @@ template <typename T, qualifier Q = glm::highp> struct rigid_body_t {
   velocity_t apply_inverse_inertia(velocity_t const &p) const;
 
   void apply_impulse(vec4_t const &location, vec4_t const &direction);
+  void apply_impulse(velocity_t const &impulse);
   void apply_local_impulse(vec4_t const &location, vec4_t const &direction);
+  void apply_local_impulse(velocity_t const& impulse);
   static velocity_t calculate_local_impulse(vec4_t const &location,
                                             vec4_t const &direction);
 
@@ -41,38 +43,53 @@ template <typename T, qualifier Q = glm::highp> struct rigid_body_t {
   from_distribution_matrix(mat4_t const &M); // Returns a rigid body at rest
   static rigid_body_t from_diagonal_distribution_matrix(
       vec4_t const &diagonal); // Returns a rigid body at rest
+
   static scalar_t
   impulse_magnitude_from_elastic_collision(rigid_body_t const &b1,
                                            rigid_body_t const &b2,
                                            vec4_t const &p, vec4_t const &n);
+  static scalar_t
+  impulse_magnitude_from_elastic_collision(rigid_body_t<T, Q> const &b1,
+                                           rigid_body_t<T, Q> const &b2,
+                                           velocity_t const &imp_dir);
   static scalar_t impulse_magnitude_from_inelastic_collision(
       rigid_body_t const &b1, rigid_body_t const &b2, vec4_t const &p,
       vec4_t const &n, T energy_loss_factor);
+  static scalar_t impulse_magnitude_from_inelastic_collision(
+      rigid_body_t<T, Q> const &b1, rigid_body_t<T, Q> const &b2,
+      velocity_t const &imp_dir, T energy_loss_factor);
 };
 
-template <typename T, qualifier Q>
-inline T rigid_body_t<T, Q>::rotational_energy() const {
-  velocity_t const p = local_momentum();
-  return glm::dot(p.rotational, velocity.rotational);
-}
+//template <typename T, qualifier Q>
+//inline T rigid_body_t<T, Q>::rotational_energy() const {
+//  velocity_t const p = local_momentum();
+//  return static_cast<T>(-0.5) * glm::dot(p.rotational, velocity.rotational);
+//}
+//
+//template <typename T, qualifier Q>
+//inline T rigid_body_t<T, Q>::boost_energy() const {
+//  velocity_t const p = local_momentum();
+//  return static_cast<T>(-0.5) * glm::dot(p.boost, velocity.boost);
+//}
 
-template <typename T, qualifier Q>
-inline T rigid_body_t<T, Q>::boost_energy() const {
-  velocity_t const p = local_momentum();
-  return glm::dot(p.boost, velocity.boost);
-}
-
+// The kinetic energy of a moving frame is -1/2 * tr(V^t P), where V
+// is the velocity, and P is the momentum M(V) (for mass tensor M).
 template <typename T, qualifier Q>
 inline T rigid_body_t<T, Q>::kinetic_energy() const {
   velocity_t const p = local_momentum();
-  return glm::dot(p.rotational, velocity.rotational) +
-         glm::dot(p.boost, velocity.boost);
+  return static_cast<T>(-0.5) * hyperbolic::dot(p, velocity);
 }
 
 template <typename T, qualifier Q>
 inline typename rigid_body_t<T, Q>::velocity_t
 rigid_body_t<T, Q>::local_momentum() const {
   return apply_inertia(velocity);
+}
+
+template <typename T, qualifier Q>
+inline typename rigid_body_t<T, Q>::velocity_t
+rigid_body_t<T, Q>::global_velocity() const {
+  return velocity.conjugated_by(frame);
 }
 
 template <typename T, qualifier Q>
@@ -182,7 +199,6 @@ rigid_body_t<T, Q>::apply_inverse_inertia(velocity_t const &p) const {
   return velocity_t{p.rotational / m, p.boost / (m + total_mass)};
 }
 
-// UNTESTED
 template <typename T, qualifier Q>
 inline void rigid_body_t<T, Q>::apply_impulse(vec4_t const &location,
                                               vec4_t const &direction) {
@@ -192,7 +208,14 @@ inline void rigid_body_t<T, Q>::apply_impulse(vec4_t const &location,
   apply_local_impulse(local_location, local_direction);
 }
 
-// UNTESTED
+template <typename T, qualifier Q>
+inline void rigid_body_t<T, Q>::apply_impulse(velocity_t const& impulse) {
+  velocity_t local_impulse =
+      impulse.conjugated_by(glm::lorentz::transpose(frame));
+
+  apply_local_impulse(local_impulse);
+}
+
 template <typename T, qualifier Q>
 inline void rigid_body_t<T, Q>::apply_local_impulse(vec4_t const &location,
                                                     vec4_t const &direction) {
@@ -203,7 +226,12 @@ inline void rigid_body_t<T, Q>::apply_local_impulse(vec4_t const &location,
   velocity += apply_inverse_inertia(imp);
 }
 
-// UNTESTED
+template <typename T, qualifier Q>
+inline void rigid_body_t<T, Q>::apply_local_impulse(velocity_t const& impulse) {
+  // Convert back to velocity
+  velocity += apply_inverse_inertia(impulse);
+}
+
 template <typename T, qualifier Q>
 inline typename rigid_body_t<T, Q>::velocity_t
 rigid_body_t<T, Q>::calculate_local_impulse(vec4_t const &location,
@@ -285,20 +313,40 @@ rigid_body_t<T, Q>::from_distribution_matrix(mat4_t const &dist_matrix) {
   return result;
 }
 
-// UNTESTED
+// Given the direction of an impulse applied to two bodies, this returns the non-zero factor
+// to multiply that direction by to get an energy preserving impulse.
+// The impulse direction is in the frame of b1.
+template <typename T, qualifier Q>
+inline T rigid_body_t<T, Q>::impulse_magnitude_from_elastic_collision(
+    rigid_body_t<T, Q> const &b1, rigid_body_t<T, Q> const &b2, velocity_t const& imp_dir) {
+
+  // Delta energy has form
+  // a * imp_dir . delta_v - 0.5 * a^2 imp_dir (M1inv + M2inv) imp_dir
+  // = a * coeff1 - a*a * coeff2
+  // where a is a constant we multiply the given impulse by, we solve for a non-zero
+  mat4_t const frame1_from_frame2 = glm::lorentz::transpose(b1.frame) * b2.frame;
+  mat4_t const frame2_from_frame1 = glm::lorentz::transpose(frame1_from_frame2);
+  velocity_t const delta_v =
+      b2.velocity.conjugated_by(frame1_from_frame2) - b1.velocity;
+  T const coeff1 = dot(imp_dir, delta_v);
+
+  velocity_t const imp_in_frame2 =
+      imp_dir.conjugated_by(frame2_from_frame1);
+  velocity_t const c =
+      b1.apply_inverse_inertia(imp_dir) +
+      b2.apply_inverse_inertia(imp_in_frame2).conjugated_by(frame1_from_frame2);
+  T const coeff2 = dot(c, imp_dir) / 2;
+
+  return coeff1 / coeff2;
+}
+
 template <typename T, qualifier Q>
 inline T rigid_body_t<T, Q>::impulse_magnitude_from_elastic_collision(
     rigid_body_t<T, Q> const &b1, rigid_body_t<T, Q> const &b2, vec4_t const &p,
     vec4_t const &n) {
 
-  velocity_t const delta_v = b1.velocity - b2.velocity;
-  T coeff1 = glm::lorentz::dot(n, delta_v * p);
-
-  velocity_t const c = b1.apply_inverse_inertia(wedge(p, n)) +
-                       b2.apply_inverse_inertia(wedge(p, n));
-  T coeff2 = glm::lorentz::dot(n, c * p) / 2;
-
-  return -coeff1 / coeff2;
+  velocity_t impulse = calculate_local_impulse(p, n);
+  return impulse_magnitude_from_elastic_collision(b1, b2, impulse);
 }
 
 // UNTESTED
