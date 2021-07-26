@@ -285,8 +285,11 @@ action_via_hermitian_matrix(ImaginaryExtension<glm::mat<2, 2, T, Q>> const &M) {
 template <typename T, qualifier Q>
 inline glm::mat<4, 4, T, Q>
 action_via_symmetric_matrix(glm::mat<2, 2, T, Q> const &M) {
-
+  
   using mat2_t = glm::mat<2, 2, T, Q>;
+  using mat4_t = glm::mat<4, 4, T, Q>;
+  using vec4_t = glm::vec<4, T, Q>;
+
   mat2_t const Mct = glm::transpose(M);
 
   // NB Ew is the identity so isn't needed
@@ -294,9 +297,9 @@ action_via_symmetric_matrix(glm::mat<2, 2, T, Q> const &M) {
   mat2_t imagEy{0, -1, 1, 0};
   mat2_t Ez{1, 0, 0, -1};
 
-  glm::mat<4, 4, T, Q> result{};
+  mat4_t result{};
   result[0] = symmetric_matrix_to_vec(M * Ex * Mct);
-  result[1] = vec4{0, (M * imagEy * Mct)[1][0], 0, 0};
+  result[1] = vec4_t{0, (M * imagEy * Mct)[1][0], 0, 0};
   result[2] = symmetric_matrix_to_vec(M * Ez * Mct);
   result[3] = symmetric_matrix_to_vec(M * Mct);
   return result;

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 
 project(hyperbolic)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 include(FetchContent)
 FetchContent_Declare(
@@ -23,6 +23,8 @@ enable_testing()
 add_executable(
     tests
     test/test_glm_lorentz.cpp
+    test/test_high_precision.cpp
+    test/test_honeycombs.cpp
     test/test_hyperbolic.cpp
     test/test_liealgebra.cpp
     test/test_rigid_body.cpp
