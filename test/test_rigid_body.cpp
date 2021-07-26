@@ -8,6 +8,7 @@
 
 using rigid_body_t = hyperbolic::rigid_body_t<float>;
 using velocity_t = rigid_body_t::velocity_t;
+namespace lorentz = glm::lorentz;
 
 void expect_close(velocity_t const &v, velocity_t const &w, float epsilon = 1e-6f) {
   expect_close(v.rotational, w.rotational, epsilon);
@@ -45,6 +46,18 @@ TEST(RigidBody, Inertia) {
   expect_close(rb.apply_inverse_inertia(rb.apply_inertia(v)), v);
   expect_close(rb.apply_inertia(rb.apply_inverse_inertia(v)), v);
 }
+
+//TEST(RigidBody, ImpulseInDirection) {
+//  // Create particle at p with velocity v
+//  glm::vec4 const p = glm::lorentz::normalize(glm::vec4{0.1f, 0.2f, -0.3f, 1.0f});
+//  glm::vec4 const w{1.0f, 0.1f, 0.2f, 0.0f};
+//  glm::vec4 const v = w + lorentz::dot(w, p) * p;
+//  float const mass = 1.0f;
+//
+//  glm::vec4 const momentum = mass * v;
+//
+//  velocity_t impulse = rigid_body_t::calculate_local_impulse(p, v);
+//}
 
 TEST(RigidBody, ElasticCollision) {
   rigid_body_t rb1{}, rb2{};
