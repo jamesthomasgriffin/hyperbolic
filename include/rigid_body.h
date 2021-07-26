@@ -355,6 +355,16 @@ inline T rigid_body_t<T, Q>::impulse_magnitude_from_inelastic_collision(
     rigid_body_t const &b1, rigid_body_t const &b2, vec4_t const &p,
     vec4_t const &n, T energy_loss_factor) {
 
+  velocity_t impulse = calculate_local_impulse(p, n);
+  return impulse_magnitude_from_inelastic_collision(b1, b2, impulse, energy_loss_factor);
+}
+
+// UNTESTED
+template <typename T, qualifier Q>
+inline T rigid_body_t<T, Q>::impulse_magnitude_from_inelastic_collision(
+    rigid_body_t<T, Q> const &b1, rigid_body_t<T, Q> const &b2,
+    velocity_t const &imp_dir, T energy_loss_factor) {
+
   velocity_t const delta_v = b1.velocity - b2.velocity;
   T const coeff1 = glm::lorentz::dot(n, delta_v * p);
 
