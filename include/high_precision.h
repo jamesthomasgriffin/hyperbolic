@@ -9,7 +9,6 @@
 #include "hyperbolic.h"
 
 #include "imaginary_extension.h"
-//#include "vector_types.h"
 #include "rigid_body.h"
 
 namespace hyperbolic {
@@ -60,13 +59,13 @@ template <class Trans, typename T>
 inline glm::mat<4, 4, T>
 left_quotient(glm::mat<4, 4, T> const &quot_frame, Trans const &quot_trans,
               glm::mat<4, 4, T> const &r_frame, Trans const &r_trans) {
-  return left_quotient<Trans, T>(quot_frame, quot_trans, r_trans) * r_frame;
+  return left_quotient(quot_frame, quot_trans, r_trans) * r_frame;
 }
 
 template <class Trans, typename T>
 inline glm::vec<4, T> left_quotient(glm::mat<4, 4, T> const &quot_frame, Trans const &quot_trans,
                           glm::vec<4, T> const &r_vec, Trans const &r_trans) {
-  return left_quotient<Trans, T>(quot_frame, quot_trans, r_trans) * r_vec;
+  return left_quotient(quot_frame, quot_trans, r_trans) * r_vec;
 }
 
 template <class POLYHEDRON> struct high_precision_frame {
@@ -82,16 +81,21 @@ template <class POLYHEDRON> struct high_precision_frame {
   mat4_t frame{1.0f};                  // low precision floating point part
   transformation_t transformation{}; // high precision transformation
 
+  bool operator==(high_precision_frame const& other) const {
+    return (frame == other.frame) && (transformation == other.transformation);
+  }
+
   position_t position() const { return position_t{frame[3], transformation}; }
 
   mat4_t to_matrix() const {
     return to_mat4(transformation, value_type{}) * frame;
   }
 
-  void normal_form() {
+  high_precision_frame& normal_form() {
     transformation_t J = transform_to_domain<polyhedron_t>(frame[3]);
     transformation = transformation * J.inverse();
     frame = to_mat4(J, value_type{}) * frame;
+    return *this;
   }
 };
 
@@ -106,7 +110,7 @@ inline typename POLYHEDRON::transformation_t normal_form(typename POLYHEDRON::tr
 template <class POLYHEDRON>
 inline glm::mat<4, 4, typename POLYHEDRON::scalar_t> left_quotient(high_precision_frame<POLYHEDRON> const &quot,
                           high_precision_frame<POLYHEDRON> const &r_fr) {
-  using Trans_t = typename high_precision_frame<POLYHEDRON>::transformation_t;
+  //using Trans_t = typename high_precision_frame<POLYHEDRON>::transformation_t;
   return left_quotient(quot.frame, quot.transformation, r_fr.frame,
                                 r_fr.transformation);
 }
@@ -115,7 +119,7 @@ template <class POLYHEDRON>
 inline glm::vec<4, typename POLYHEDRON::scalar_t>
 left_quotient(high_precision_frame<POLYHEDRON> const &quot,
                           high_precision_point<POLYHEDRON> const &p) {
-  using Trans_t = typename high_precision_frame<POLYHEDRON>::transformation_t;
+  //using Trans_t = typename high_precision_frame<POLYHEDRON>::transformation_t;
   return left_quotient(quot.frame, quot.transformation, p.point,
                                 p.transformation);
 }
@@ -182,6 +186,8 @@ typename POLYHEDRON::transformation_t transform_to_domain(typename POLYHEDRON::v
   bool done = false;
   int count = 0;
 
+  assert(glm::lorentz::dot(p, p) < 0);
+
   while (!done) {
     std::optional<size_t> cl_face = closest_face<POLYHEDRON>(current_pos);
     if (cl_face.has_value()) {
@@ -197,6 +203,8 @@ typename POLYHEDRON::transformation_t transform_to_domain(typename POLYHEDRON::v
   return result;
 }
 
+// UNTESTED
+// This is a higher precision variant intended for comparing between two types of high precision point
 template <typename PH1, typename PH2>
 typename PH1::transformation_t
 transform_to_domain(high_precision_point<PH2> const &p) {
@@ -216,7 +224,7 @@ transform_to_domain(high_precision_point<PH2> const &p) {
     } else
       done = true;
 
-    assert(++count < 1000); // Fail here if something isn't working, should be
+    assert(++count < 1000); // Fail here if something isn't working, might be
                             // replaced by an exception once code is mature
   }
   return current_pos.transformation * p.transformation.inverse();
