@@ -286,20 +286,24 @@ template <typename T, qualifier Q, bool Aligned>
 struct compute_boost<mat<4, 4, T, Q>, T, Aligned> {
   GLM_FUNC_QUALIFIER static mat<4, 4, T, Q> call(vec<3, T, Q> const &dir) {
 
-    T d2 = glm::dot(dir, dir);
-    T d = sqrt(d2);
-    T sinchd = (d > 1e-6) ? sinh(d) / d : 1 + d2 / 3;
-    T cosh_coeff = (d > 1e-5) ? (cosh(d) - 1) / d2 : (12 + d2) / 24;
+    // Computed scalar constants needed below
+    T const d2 = glm::dot(dir, dir);
+    T const d = glm::sqrt(d2);
+    T const sinchd = (d > 1e-6) ? glm::sinh(d) / d : 1 + d2 / 3;
+    T const cosh_coeff = (d > 1e-5) ? (glm::cosh(d) - 1) / d2 : (12 + d2) / 24;
 
+    // The infinitesimal boost, S
     mat<4, 4, T, Q> S{0};
     S[3] = vec<4, T, Q>{dir, 0};
     S[0][3] = dir[0];
     S[1][3] = dir[1];
     S[2][3] = dir[2];
 
+    // The square of S
     mat<4, 4, T, Q> S2{glm::outerProduct(dir, dir)};
     S2[3][3] = d2;
 
+    // Closed form for exp(S) using S^3 = d^2 S
     return mat<4, 4, T, Q>{1} + sinchd * S + cosh_coeff * S2;
   }
 
