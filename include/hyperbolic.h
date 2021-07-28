@@ -112,6 +112,13 @@ public:
     T s = glm::sqrt(SIGN * (c * c - 1));
     return angle{c, s};
   }
+  template <length_t L, qualifier Q>
+  static angle between_point_and_plane(glm::vec<L, T, Q> const &p,
+                              glm::vec<L, T, Q> const &q) {
+    T s = (SIGN == 1) ? lorentz::dot(p, q) : glm::dot(p, q);
+    T c = glm::sqrt(1 + SIGN * s * s);
+    return angle{c, s};
+  }
 
 private:
   angle(T _c, T _s) : c{_c}, s{_s} {};
@@ -212,6 +219,7 @@ T distance(glm::vec<4, T, Q> const &p, glm::vec<4, T, Q> const &q) {
   return std::acosh(-lorentz::dot(p, q));
 }
 
+// both p and q should have norm -1
 template <typename T, qualifier Q>
 inline glm::vec<4, T, Q> move_d_from_p_to_q(hyperbolic_angle<T> d,
                                             glm::vec<4, T, Q> const &p,
@@ -219,6 +227,15 @@ inline glm::vec<4, T, Q> move_d_from_p_to_q(hyperbolic_angle<T> d,
   using hyp_angle = hyperbolic_angle<T>;
   hyp_angle const pq = hyp_angle::between_points(p, q);
   return (sinh(pq - d) * p + sinh(d) * q) / sinh(pq);
+}
+
+// p should have norm -1 and n should be tangent to p with norm +1
+template <typename T, qualifier Q>
+inline glm::vec<4, T, Q> move_d_from_p_along_n(hyperbolic_angle<T> d,
+                                            glm::vec<4, T, Q> const &p,
+                                            glm::vec<4, T, Q> const &n) {
+  
+  return cosh(d) * p + sinh(d) * n;
 }
 
 template <typename T, qualifier Q>

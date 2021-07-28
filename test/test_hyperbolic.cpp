@@ -19,18 +19,40 @@ TEST(Hyperbolic, Distance) {
 }
 
 TEST(Hyperbolic, Angles) {
-  hyperbolic::hyperbolic_angle<float> a{0.1f}, b{0.2f};
+  using hangle_t =  hyperbolic::hyperbolic_angle<float>;
 
-  EXPECT_NEAR(static_cast<float>(a + b), 0.3f, epsilon);
-  EXPECT_NEAR(static_cast<float>(a - b), -0.1f, epsilon);
+  {  // Basic arithmetic
+    hangle_t a{0.1f}, b{0.2f};
 
-  a -= b;
-  EXPECT_NEAR(static_cast<float>(a), -0.1f, epsilon);
-  EXPECT_NEAR(static_cast<float>(-a), 0.1f, epsilon);
+    EXPECT_NEAR(static_cast<float>(a + b), 0.3f, epsilon);
+    EXPECT_NEAR(static_cast<float>(a - b), -0.1f, epsilon);
 
-  b += a;
-  EXPECT_NEAR(static_cast<float>(b), 0.1f, epsilon);
+    a -= b;
+    EXPECT_NEAR(static_cast<float>(a), -0.1f, epsilon);
+    EXPECT_NEAR(static_cast<float>(-a), 0.1f, epsilon);
 
+    b += a;
+    EXPECT_NEAR(static_cast<float>(b), 0.1f, epsilon);
+  }
+
+  {  // Construction from points / planes
+    glm::vec4 const v = glm::lorentz::boost(glm::vec3{0.1f, 0, 0})[3];
+    glm::vec4 const w{0, 0, 0, 1};
+    glm::vec4 const p{1, 0, 0, 0};
+
+    hangle_t const c = hangle_t::between_points(v, w);
+    hangle_t const d = hangle_t::between_point_and_plane(v, p);
+
+    EXPECT_NEAR(static_cast<float>(c), 0.1f, epsilon);
+    EXPECT_NEAR(static_cast<float>(d), 0.1f, epsilon);
+
+    EXPECT_NEAR(hyperbolic::cosh(c) * hyperbolic::cosh(c) -
+                    hyperbolic::sinh(c) * hyperbolic::sinh(c),
+                1.0f, epsilon);
+    EXPECT_NEAR(hyperbolic::cosh(d) * hyperbolic::cosh(d) -
+                    hyperbolic::sinh(d) * hyperbolic::sinh(d),
+                1.0f, epsilon);
+  }
 }
 
 TEST(Hyperbolic, Interpolation) {
