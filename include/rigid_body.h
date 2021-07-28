@@ -49,8 +49,13 @@ template <typename T, qualifier Q = glm::highp> struct rigid_body_t {
                                            rigid_body_t const &b2,
                                            vec4_t const &p, vec4_t const &n);
   static scalar_t
-  impulse_magnitude_from_elastic_collision(rigid_body_t<T, Q> const &b1,
-                                           rigid_body_t<T, Q> const &b2,
+  impulse_magnitude_from_elastic_collision(rigid_body_t const &b1,
+                                           rigid_body_t const &b2,
+                                           velocity_t const &imp_dir);
+  static scalar_t
+  impulse_magnitude_from_elastic_collision(rigid_body_t const &b1,
+                                           rigid_body_t const &b2,
+                                           mat4_t const& rel_frame,
                                            velocity_t const &imp_dir);
   static scalar_t impulse_magnitude_from_inelastic_collision(
       rigid_body_t const &b1, rigid_body_t const &b2, vec4_t const &p,
@@ -320,18 +325,33 @@ template <typename T, qualifier Q>
 inline T rigid_body_t<T, Q>::impulse_magnitude_from_elastic_collision(
     rigid_body_t<T, Q> const &b1, rigid_body_t<T, Q> const &b2, velocity_t const& imp_dir) {
 
+  mat4_t const frame1_from_frame2 = glm::lorentz::transpose(b1.frame) * b2.frame;
+  return impulse_magnitude_from_elastic_collision(b1, b2, frame1_from_frame2,
+                                                  imp_dir);
+}
+
+// Given the direction of an impulse applied to two bodies, this returns the
+// non-zero factor to multiply that direction by to get an energy preserving
+// impulse. The impulse direction is in the frame of b1.
+// For this variant of the function, the relative frame of b2 to b1 is provided.
+// This is to allow for carrying out the task even when b1 and b2 are in different frames.
+template <typename T, qualifier Q>
+inline T rigid_body_t<T, Q>::impulse_magnitude_from_elastic_collision(
+    rigid_body_t<T, Q> const &b1, rigid_body_t<T, Q> const &b2, mat4_t const& rel_frame,
+    velocity_t const &imp_dir) {
+
   // Delta energy has form
   // a * imp_dir . delta_v - 0.5 * a^2 imp_dir (M1inv + M2inv) imp_dir
   // = a * coeff1 - a*a * coeff2
-  // where a is a constant we multiply the given impulse by, we solve for a non-zero
-  mat4_t const frame1_from_frame2 = glm::lorentz::transpose(b1.frame) * b2.frame;
-  mat4_t const frame2_from_frame1 = glm::lorentz::transpose(frame1_from_frame2);
+  // where a is a constant we multiply the given impulse by, we solve for a
+  // non-zero
+  mat4_t const& frame1_from_frame2 = rel_frame;
+  mat4_t const frame2_from_frame1 = glm::lorentz::transpose(rel_frame);
   velocity_t const delta_v =
       b2.velocity.conjugated_by(frame1_from_frame2) - b1.velocity;
   T const coeff1 = dot(imp_dir, delta_v);
 
-  velocity_t const imp_in_frame2 =
-      imp_dir.conjugated_by(frame2_from_frame1);
+  velocity_t const imp_in_frame2 = imp_dir.conjugated_by(frame2_from_frame1);
   velocity_t const c =
       b1.apply_inverse_inertia(imp_dir) +
       b2.apply_inverse_inertia(imp_in_frame2).conjugated_by(frame1_from_frame2);

@@ -303,9 +303,9 @@ closest_point_in_plane(glm::vec<4, T, Q> const &p,
 
 template <typename T>
 inline glm::mat<4, 4, T, glm::defaultp> horographic(T fov, T aspect) {
-  return glm::perspective(fov, aspect, 0.00001f, 2.0f) *
-         glm::lookAt(glm::vec3{0, 0, 1}, glm::vec3{0, 0, -1},
-                     glm::vec3{0, 1, 0});
+  return glm::perspective(fov, aspect, static_cast<T>(0.00001), static_cast<T>(2.0)) *
+         glm::lookAt(glm::vec<3, T>{0, 0, 1}, glm::vec<3, T>{0, 0, -1},
+                     glm::vec<3, T>{0, 1, 0});
 }
 
 } // namespace hyperbolic

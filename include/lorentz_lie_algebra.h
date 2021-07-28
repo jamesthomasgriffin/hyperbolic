@@ -197,13 +197,13 @@ template <typename T, qualifier Q> struct sl2_lie_algebra {
 
   ImaginaryExtension<mat2_t> matrix{mat2_t{1}};
 
-  static sl2_lie_algebra from(lorentz_lie_algebra_t<float> const &v) {
+  static sl2_lie_algebra from(lorentz_lie_algebra_t<T> const &v) {
     vec3_t const &w = v.rotational;
     vec3_t const &b = v.boost;
 
     return {ImaginaryExtension<glm::mat<2, 2, T, Q>>{
-        0.5f * mat2_t{b[2], b[0] + w[1], b[0] - w[1], -b[2]},
-        0.5f * mat2_t{w[2], w[0] - b[1], w[0] + b[1], -w[2]}}};
+        static_cast<T>(0.5) * mat2_t{b[2], b[0] + w[1], b[0] - w[1], -b[2]},
+        static_cast<T>(0.5) * mat2_t{w[2], w[0] - b[1], w[0] + b[1], -w[2]}}};
   };
 };
 
@@ -310,13 +310,13 @@ action_via_symmetric_matrix(glm::mat<2, 2, T, Q> const &M) {
 template <typename T, qualifier Q>
 inline glm::mat<4, 4, T, Q> exponential(lorentz_lie_algebra_t<T, Q> const &v) {
   using mat2_t = glm::mat<2, 2, T, Q>;
-  using sl2 = detail::sl2_lie_algebra<T, Q>;
+  using sl2_t = detail::sl2_lie_algebra<T, Q>;
   using vec3_t = glm::vec<3, T, Q>;
 
   vec3_t const &w = v.rotational;
   vec3_t const &b = v.boost;
 
-  sl2 A = sl2::from(v);
+  sl2_t A = sl2_t::from(v);
 
   ImaginaryExtension<mat2_t> expA = exponential(A);
 

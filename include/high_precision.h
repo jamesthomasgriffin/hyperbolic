@@ -36,7 +36,7 @@ template <class POLYHEDRON> struct high_precision_point {
   transformation_t transformation{}; // high precision transformation
 
   mat4_t to_vector() const {
-    return to_mat4(transformation, value_type{1}) * point;
+    return to_mat4(transformation, value_type{}) * point;
   }
 
   void normal_form() {
@@ -100,26 +100,26 @@ template <class POLYHEDRON> struct high_precision_frame {
 };
 
 template <class POLYHEDRON>
-inline typename POLYHEDRON::transformation_t normal_form(typename POLYHEDRON::transformation_t &T, typename POLYHEDRON::mat4_t &frame) {
+inline typename POLYHEDRON::mat4_t normal_form(typename POLYHEDRON::transformation_t &T, typename POLYHEDRON::mat4_t &frame) {
   typename POLYHEDRON::transformation_t J = transform_to_domain<POLYHEDRON>(frame[3]);
   T = T * J.inverse();
-  frame = to_mat4(J, typename POLYHEDRON::scalar_t{}) * frame;
-  return J;
+  typename POLYHEDRON::mat4_t local_transform =
+      to_mat4(J, typename POLYHEDRON::scalar_t{});
+  frame = local_transform * frame;
+  return local_transform;
 }
 
 template <class POLYHEDRON>
-inline glm::mat<4, 4, typename POLYHEDRON::scalar_t> left_quotient(high_precision_frame<POLYHEDRON> const &quot,
+inline typename POLYHEDRON::mat4_t left_quotient(high_precision_frame<POLYHEDRON> const &quot,
                           high_precision_frame<POLYHEDRON> const &r_fr) {
-  //using Trans_t = typename high_precision_frame<POLYHEDRON>::transformation_t;
   return left_quotient(quot.frame, quot.transformation, r_fr.frame,
                                 r_fr.transformation);
 }
 
 template <class POLYHEDRON>
-inline glm::vec<4, typename POLYHEDRON::scalar_t>
+inline typename POLYHEDRON::vec4_t
 left_quotient(high_precision_frame<POLYHEDRON> const &quot,
                           high_precision_point<POLYHEDRON> const &p) {
-  //using Trans_t = typename high_precision_frame<POLYHEDRON>::transformation_t;
   return left_quotient(quot.frame, quot.transformation, p.point,
                                 p.transformation);
 }
