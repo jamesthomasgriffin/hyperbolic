@@ -28,6 +28,7 @@ add_executable(
     test/test_hyperbolic.cpp
     test/test_liealgebra.cpp
     test/test_rigid_body.cpp
+    test/test_spheres.cpp
     )
 
 target_include_directories(

@@ -9,12 +9,17 @@
 namespace hyperbolic {
 
 // Represents a sphere, horosphere, pseudo-sphere (NB a plane is also a pseudo-sphere)
-template <typename T, qualifier Q> struct implicit_sphere {
-  enum class Type { Sphere, Horosphere, Pseudosphere, Plane };
+template <typename T = float, qualifier Q = glm::highp> struct implicit_sphere {
+  enum class Type { Sphere, Horosphere, Pseudosphere };
 
   glm::vec<4, T, Q> center; // Should have norm -1 for sphere, 0 for horosphere,
                             // 1 for pseudosphere and plane
-  hyperbolic_angle<T> radius{};
+
+  hyperbolic_angle<T>
+      radius{}; // Literal radius in sphere case, equidistant value from plane
+                // for pseudosphere case, equidistant value from reference
+                // horosphere in horosphere case
+
   Type type;
 
   T curvature() const;
@@ -23,6 +28,7 @@ template <typename T, qualifier Q> struct implicit_sphere {
   implicit_sphere grow_by(hyperbolic_angle<T> const &r) const;
 
   T distance_from(glm::vec<4, T, Q> const &p) const;
+  hyperbolic_angle<T> distance_as_angle(glm::vec<4, T, Q> const &p) const;
 
   bool intersects(implicit_sphere const &s) const;
   T time_to_intersection(implicit_sphere const &s,
@@ -53,25 +59,38 @@ template <typename T, qualifier Q>
 inline T
 implicit_sphere<T, Q>::distance_from(glm::vec<4, T, Q> const &p) const {
 
-  T const cp = lorentz::dot(c, p);
+  T const cp = lorentz::dot(center, p);
   if (type == Type::Sphere)
     return glm::acosh(-cp) - static_cast<T>(radius);
   else if (type == Type::Horosphere)
-    return glm::log(-cp);
+    return glm::log(-cp) - static_cast<T>(radius);
   else // if (type == Type::Pseudosphere)
-    return glm::asinh(cp) - static_cast<T>(radius);
+    return -glm::asinh(cp) - static_cast<T>(radius);
+}
+
+template <typename T, qualifier Q>
+inline hyperbolic_angle<T>
+implicit_sphere<T, Q>::distance_as_angle(glm::vec<4, T, Q> const &p) const {
+
+  T const cp = lorentz::dot(center, p);
+  if (type == Type::Sphere)
+    return hyperbolic_angle<T>::between_points(p, center) - radius;
+  else if (type == Type::Horosphere)
+    return hyperbolic_angle<T>{distance_from(p)};  // TODO: Write more efficient version
+  else // if (type == Type::Pseudosphere)
+    return -hyperbolic_angle<T>::between_point_and_plane(p, center) - radius;
 }
 
 template <typename T, qualifier Q>
 inline bool implicit_sphere<T, Q>::contains(glm::vec<4, T, Q> const &p) const {
   T const cp = glm::lorentz::dot(center, p);
 
-  if (type == Type::Horosphere)
-    return cp < 1;
-  else if (type == Type::Sphere)
+  if (type == Type::Sphere)
     return -cp < hyperbolic::cosh(radius);
+  else if (type == Type::Horosphere)
+    return -cp < hyperbolic::exp(radius);
   else // if (type == Type::Pseudosphere)
-    return cp < hyperbolic::sinh(radius);
+    return -cp < hyperbolic::sinh(radius);
 }
 
 template <typename T, qualifier Q>
@@ -109,7 +128,17 @@ inline bool implicit_sphere<T, Q>::intersects(implicit_sphere const &s) const {
 template <typename T, qualifier Q>
 inline glm::vec<4, T, Q>
 implicit_sphere<T, Q>::closest_point(glm::vec<4, T, Q> const &p) const {
-  return move_d_from_p_to_q(radius, center, p);
+
+  if (type == Type::Sphere)
+    return move_d_from_p_to_q(radius, center, p);
+  else if (type == Type::Horosphere) {
+    glm::vec<4, T, Q> const n = p + (1 / lorentz::dot(p, center)) * center;
+    return move_d_from_p_along_n(distance_as_angle(p), p, -n);
+  } else { // if (type == Type::Pseudosphere)
+    T const cp = lorentz::dot(p, center);
+    glm::vec<4, T, Q> const n = (cp * p + center) / glm::sqrt(1 + cp * cp);
+    return move_d_from_p_along_n(distance_as_angle(p), p, n);
+  }
 }
 
 template <typename T, qualifier Q>
