@@ -12,6 +12,7 @@
 namespace hyperbolic {
 
 namespace lorentz = glm::lorentz;
+using qualifier = glm::qualifier;
 
 template <typename T, qualifier Q>
 inline typename T distance(glm::vec<4, T, Q> const &p,
@@ -201,6 +202,9 @@ template <typename T> inline T sinh(hyperbolic_angle<T> const &angle) {
 }
 template <typename T> inline T cosh(hyperbolic_angle<T> const &angle) {
   return angle.get_c();
+}
+template <typename T> inline T exp(hyperbolic_angle<T> const &angle) {
+  return angle.get_c() + angle.get_s();
 }
 
 template <typename T, qualifier Q>
