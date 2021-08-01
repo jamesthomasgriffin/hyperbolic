@@ -35,7 +35,7 @@ template <typename T, qualifier Q = glm::highp> struct rigid_body_t {
   void apply_impulse(vec4_t const &location, vec4_t const &direction);
   void apply_impulse(velocity_t const &impulse);
   void apply_local_impulse(vec4_t const &location, vec4_t const &direction);
-  void apply_local_impulse(velocity_t const& impulse);
+  void apply_local_impulse(velocity_t const &impulse);
   static velocity_t calculate_local_impulse(vec4_t const &location,
                                             vec4_t const &direction);
 
@@ -52,11 +52,14 @@ template <typename T, qualifier Q = glm::highp> struct rigid_body_t {
   impulse_magnitude_from_elastic_collision(rigid_body_t const &b1,
                                            rigid_body_t const &b2,
                                            velocity_t const &imp_dir);
+  static scalar_t impulse_magnitude_from_elastic_collision(
+      rigid_body_t const &b1, rigid_body_t const &b2, mat4_t const &rel_frame,
+      velocity_t const &imp_dir);
+
   static scalar_t
-  impulse_magnitude_from_elastic_collision(rigid_body_t const &b1,
-                                           rigid_body_t const &b2,
-                                           mat4_t const& rel_frame,
+  impulse_magnitude_from_elastic_collision(rigid_body_t const &b,
                                            velocity_t const &imp_dir);
+
   static scalar_t impulse_magnitude_from_inelastic_collision(
       rigid_body_t const &b1, rigid_body_t const &b2, vec4_t const &p,
       vec4_t const &n, T energy_loss_factor);
@@ -367,6 +370,16 @@ inline T rigid_body_t<T, Q>::impulse_magnitude_from_elastic_collision(
 
   velocity_t impulse = calculate_local_impulse(p, n);
   return impulse_magnitude_from_elastic_collision(b1, b2, impulse);
+}
+
+// Collision of a rigid body with a massive object, preserving energy of the rigid body
+template <typename T, qualifier Q>
+inline T rigid_body_t<T, Q>::impulse_magnitude_from_elastic_collision(
+  rigid_body_t const& b, velocity_t const& imp_dir) {
+  T const coeff1 = dot(b.velocity, imp_dir);
+  T const coeff2 =
+      static_cast<T>(0.5) * dot(imp_dir, b.apply_inverse_inertia(imp_dir));
+  return -coeff1 / coeff2;
 }
 
 // UNTESTED

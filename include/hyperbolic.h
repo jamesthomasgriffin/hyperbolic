@@ -18,6 +18,15 @@ template <typename T, qualifier Q>
 inline typename T distance(glm::vec<4, T, Q> const &p,
                            glm::vec<4, T, Q> const &q);
 
+//enum class ConjugacyClassType { Elliptic, Hyperbolic, Parabolic, Loxodromic, Identity };
+
+//template <typename T> struct conjugacy_class_t {
+//  
+//  ConjugacyClassType type{ConjugacyClassType::Identity};
+//  elliptic_angle<T> angle{};
+//  hyperbolic_angle<T> distance{};
+//};
+
 template <typename T, qualifier Q>
 inline glm::vec<4, T, Q> move_d_from_p_to_q(T d, glm::vec<4, T, Q> const &p,
                                             glm::vec<4, T, Q> const &q);
@@ -109,19 +118,23 @@ public:
   static angle between_points(glm::vec<L, T, Q> const &p,
                               glm::vec<L, T, Q> const &q) {
     T c = (SIGN == 1) ? -lorentz::dot(p, q) : glm::dot(p, q);
-    T s = glm::sqrt(SIGN * (c * c - 1));
-    return angle{c, s};
+    return from_c(c);
   }
   template <length_t L, qualifier Q>
   static angle between_point_and_plane(glm::vec<L, T, Q> const &p,
-                              glm::vec<L, T, Q> const &q) {
+                                       glm::vec<L, T, Q> const &q) {
     T s = (SIGN == 1) ? lorentz::dot(p, q) : glm::dot(p, q);
-    T c = glm::sqrt(1 + SIGN * s * s);
-    return angle{c, s};
+    return angle{c_from_s(s), s};
   }
+
+  static angle from_c(T c) { return angle{c, s_from_c(c)}; }
+  static angle from_s(T s) { return angle{c_from_s(s), s}; }
 
 private:
   angle(T _c, T _s) : c{_c}, s{_s} {};
+
+  static inline T c_from_s(T s) { return glm::sqrt(1 + SIGN * s * s); }
+  static inline T s_from_c(T c) { return glm::sqrt(SIGN * (c * c - 1)); }
 };
 
 template <typename T, qualifier Q>
@@ -195,13 +208,13 @@ log_special_affine_matrix(glm::mat<4, 4, T, Q> const &m) {
 
 } // namespace detail
 
-template <typename T> using spherical_angle = detail::angle<-1, T>;
+template <typename T> using elliptic_angle = detail::angle<-1, T>;
 template <typename T> using hyperbolic_angle = detail::angle<1, T>;
 
-template <typename T> inline T sin(spherical_angle<T> const &angle) {
+template <typename T> inline T sin(elliptic_angle<T> const &angle) {
   return angle.get_s();
 }
-template <typename T> inline T cos(spherical_angle<T> const &angle) {
+template <typename T> inline T cos(elliptic_angle<T> const &angle) {
   return angle.get_c();
 }
 template <typename T> inline T sinh(hyperbolic_angle<T> const &angle) {
