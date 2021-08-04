@@ -248,34 +248,34 @@ rigid_body_t<T, Q>::calculate_local_impulse(vec4_t const &location,
 }
 
 // UNTESTED
-template <typename T, qualifier Q>
-inline std::array<int, 2> find_pivot(glm::mat<4, 4, T, Q> const &M) {
-  using pivot_t = std::array<int, 2>;
-  pivot_t pivot{0, 1};
-
-  T error = abs(M[pivot[0]][pivot[1]]);
-
-  constexpr std::array<pivot_t, 5> candidates = {pivot_t{0, 2}, pivot_t{0, 3},
-                                                 pivot_t{1, 2}, pivot_t{1, 3},
-                                                 pivot_t{2, 3}};
-  for (auto const &p : candidates) {
-    auto v = abs(M[p[0]][p[1]]);
-    if (v > error) {
-      pivot = p;
-      error = v;
-    }
-  }
-  return pivot;
-}
+//template <typename T, qualifier Q>
+//inline std::array<int, 2> find_pivot(glm::mat<4, 4, T, Q> const &M) {
+//  using pivot_t = std::array<int, 2>;
+//  pivot_t pivot{0, 1};
+//
+//  T error = abs(M[pivot[0]][pivot[1]]);
+//
+//  constexpr std::array<pivot_t, 5> candidates{pivot_t{0, 2}, pivot_t{0, 3},
+//                                                 pivot_t{1, 2}, pivot_t{1, 3},
+//                                                 pivot_t{2, 3}};
+//  for (auto const &p : candidates) {
+//    auto v = abs(M[p[0]][p[1]]);
+//    if (v > error) {
+//      pivot = p;
+//      error = v;
+//    }
+//  }
+//  return pivot;
+//}
 
 // UNTESTED
 template <typename T, qualifier Q>
 inline rigid_body_t<T, Q>
-rigid_body_t<T, Q>::from_diagonal_distribution_matrix(vec4_t const &diag) {
+rigid_body_t<T, Q>::from_diagonal_distribution_matrix(glm::vec<4, T, Q> const &diag) {
   rigid_body_t<T, Q> result{};
   result.total_mass = -((diag[0] + diag[1]) + (diag[2] + diag[3]));
   result.distributional_inertia =
-      vec3_t{diag[1] + diag[2], diag[0] + diag[2], diag[0] + diag[1]};
+      glm::vec<3, T, Q>{diag[1] + diag[2], diag[0] + diag[2], diag[0] + diag[1]};
   return result;
 }
 
@@ -283,17 +283,16 @@ rigid_body_t<T, Q>::from_diagonal_distribution_matrix(vec4_t const &diag) {
 template <typename T, qualifier Q>
 inline rigid_body_t<T, Q>
 rigid_body_t<T, Q>::from_distribution_matrix(mat4_t const &dist_matrix) {
-  using T = mat4::value_type;
   using pivot_t = std::array<int, 2>;
-  mat4 M = dist_matrix;
-  mat4 P{1.0f};
+  glm::mat<4, 4, T, Q> M = dist_matrix;
+  glm::mat<4, 4, T, Q> P{1.0f};
 
   // Apply a Lorentzian version of the Jacobi eigenvalue algorithm to transform
   // M to a diagonal matrix
   while (1) {
     // Find the largest pivot
     pivot_t pivot = find_pivot(M);
-    if (abs(M[pivot[0]][pivot[1]]) < 1e-6)
+    if (abs(M[pivot[0]][pivot[1]]) < static_cast<T>(1e-6))
       continue;
 
     if (pivot[1] == 3) {
@@ -317,7 +316,7 @@ rigid_body_t<T, Q>::from_distribution_matrix(mat4_t const &dist_matrix) {
   result.total_mass = -(dist_matrix[0][0] + dist_matrix[1][1]) -
                       (dist_matrix[2][2] + dist_matrix[3][3]);
   result.distributional_inertia =
-      vec3_t{M[1][1] + M[2][2], M[0][0] + M[2][2], M[0][0] + M[1][1]};
+      glm::vec<3, T, Q>{M[1][1] + M[2][2], M[0][0] + M[2][2], M[0][0] + M[1][1]};
   return result;
 }
 
@@ -393,29 +392,29 @@ inline T rigid_body_t<T, Q>::impulse_magnitude_from_inelastic_collision(
 }
 
 // UNTESTED
-template <typename T, qualifier Q>
-inline T rigid_body_t<T, Q>::impulse_magnitude_from_inelastic_collision(
-    rigid_body_t<T, Q> const &b1, rigid_body_t<T, Q> const &b2,
-    velocity_t const &imp_dir, T energy_loss_factor) {
-
-  velocity_t const delta_v = b1.velocity - b2.velocity;
-  T const coeff1 = glm::lorentz::dot(n, delta_v * p);
-
-  velocity_t const c = b1.apply_inverse_inertia(wedge(p, n)) +
-                       b2.apply_inverse_inertia(wedge(p, n));
-  T const coeff2 = glm::lorentz::dot(n, c * p) / 2;
-
-  T const coeff0 =
-      energy_loss_factor * (b1.kinetic_energy() + b2.kinetic_energy());
-
-  T const disc = coeff1 * coeff1 - 4 * coeff0 * coeff2;
-
-  if (disc >= 0)
-    return (-coeff1 + glm::sqrt(disc)) / (2 * coeff2);
-
-  // If no collision exists that satisfies the loss then return the minimum
-  // energy as the best attempt
-  return -coeff1 / (2 * coeff2);
-}
+//template <typename T, qualifier Q>
+//inline T rigid_body_t<T, Q>::impulse_magnitude_from_inelastic_collision(
+//    rigid_body_t<T, Q> const &b1, rigid_body_t<T, Q> const &b2,
+//    velocity_t const &imp_dir, T energy_loss_factor) {
+//
+//  velocity_t const delta_v = b1.velocity - b2.velocity;
+//  T const coeff1 = glm::lorentz::dot(n, delta_v * p);
+//
+//  velocity_t const c = b1.apply_inverse_inertia(imp_dir) +
+//                       b2.apply_inverse_inertia(imp_dir);
+//  T const coeff2 = glm::lorentz::dot(n, c * p) / 2;
+//
+//  T const coeff0 =
+//      energy_loss_factor * (b1.kinetic_energy() + b2.kinetic_energy());
+//
+//  T const disc = coeff1 * coeff1 - 4 * coeff0 * coeff2;
+//
+//  if (disc >= 0)
+//    return (-coeff1 + glm::sqrt(disc)) / (2 * coeff2);
+//
+//  // If no collision exists that satisfies the loss then return the minimum
+//  // energy as the best attempt
+//  return -coeff1 / (2 * coeff2);
+//}
 
 } // namespace hyperbolic

@@ -133,12 +133,13 @@ template <typename INT = uint64_t, typename T = float> struct honeycomb_3inf {
 
   using vec4_t = glm::vec<4, T>;
   using mat4_t = glm::mat<4, 4, T>;
+  using scalar_t = T;
 
   using transformation_t = detail::PSL2R<INT>;
 
   static constexpr int n_faces = 3;
 
-  static constexpr vec4_t center{static_cast<vec4_t::value_type>(0.5), 0, 0, 1};
+  static constexpr vec4_t center{static_cast<scalar_t>(0.5), 0, 0, 1};
 
   static constexpr std::array<vec4_t, n_faces> faces{
       vec4_t{1, 0, 0, 0}, vec4_t{-1, 0, -1, -1}, vec4_t{-1, 0, 1, -1}};
@@ -235,8 +236,8 @@ template <typename INT, typename T>
 const std::array<typename honeycomb_3inf<INT, T>::transformation_t, honeycomb_3inf<INT, T>::n_faces>
    honeycomb_3inf<INT, T>::gens_int{
        honeycomb_3inf::transformation_t::basic_parabolic(1),
-       honeycomb_3inf::transformation_t::basic_parabolic(-1),
-       {1, 0, -1, 1}};
+       honeycomb_3inf::transformation_t::basic_parabolic(-1ull),
+       {1, 0, -1ull, 1}};
 
 template <typename INT, typename T>
 const std::array<glm::mat<4, 4, T>, honeycomb_3inf<INT, T>::n_faces> honeycomb_3inf<INT, T>::gens_lorentz{

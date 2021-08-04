@@ -15,7 +15,7 @@ namespace lorentz = glm::lorentz;
 using qualifier = glm::qualifier;
 
 template <typename T, qualifier Q>
-inline typename T distance(glm::vec<4, T, Q> const &p,
+inline T distance(glm::vec<4, T, Q> const &p,
                            glm::vec<4, T, Q> const &q);
 
 //enum class ConjugacyClassType { Elliptic, Hyperbolic, Parabolic, Loxodromic, Identity };

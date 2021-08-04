@@ -45,7 +45,7 @@ template <typename HC> void test_honeycomb() {
 
   // This checks that the matrices are well-formed (have +-1 determinant)
   for (auto const &T : HC::gens_int) {
-    T *T.inverse() == HC::transformation_t{};
+    T *T.inverse() == typename HC::transformation_t{};
   }
 
   // Generators are Lorentz matrices
